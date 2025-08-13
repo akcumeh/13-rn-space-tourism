@@ -70,5 +70,6 @@ Thumbs.db
 # Misc
 *.log
 
-# Example/template directories
+# Examples and other support
 app-example
+*-guide.md

@@ -1,138 +1,88 @@
-import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useEffect } from 'react';
+import { ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
+import NavBar from '../../components/NavBar';
 
-const planets = [
-    { id: 1, name: 'Moon', emoji: '🌙', color: '#C0C0C0' },
-    { id: 2, name: 'Mars', emoji: '🔴', color: '#CD5C5C' },
-    { id: 3, name: 'Europa', emoji: '❄️', color: '#87CEEB' },
-    { id: 4, name: 'Titan', emoji: '🟡', color: '#DAA520' }
-];
-
-export default function App() {
-    const [selectedPlanet, setSelectedPlanet] = useState(null);
-
+export default function HomeScreen() {
     useEffect(() => {
-        loadSavedPlanet();
+        AsyncStorage.setItem('lastScreen', 'Home');
     }, []);
 
-    const loadSavedPlanet = async () => {
-        try {
-            const saved = await AsyncStorage.getItem('selectedPlanet');
-            if (saved) {
-                setSelectedPlanet(JSON.parse(saved));
-            }
-        } catch (error) {
-            console.error('Error loading saved planet:', error);
-        }
-    };
-
-    // @ts-ignore
-    const selectPlanet = async (planet) => {
-        try {
-            await AsyncStorage.setItem('selectedPlanet', JSON.stringify(planet));
-            setSelectedPlanet(planet);
-        } catch (error) {
-            console.error('Error saving planet:', error);
-        }
-    };
-
-    const clearSavedPlanet = async () => {
-        try {
-            await AsyncStorage.removeItem('selectedPlanet');
-            setSelectedPlanet(null);
-        } catch (error) {
-            console.error('Error clearing planet:', error);
-        }
-    };
-
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Select Your Planet</Text>
-
-            <View style={styles.planetsGrid}>
-                {planets.map((planet) => (
-                    <TouchableOpacity
-                        key={planet.id}
-                        style={[styles.planetButton, { borderColor: planet.color }]}
-                        onPress={() => selectPlanet(planet)}
-                    >
-                        <Text style={styles.planetEmoji}>{planet.emoji}</Text>
-                        <Text style={styles.planetName}>{planet.name}</Text>
-                    </TouchableOpacity>
-                ))}
+        <ImageBackground
+            source={require('../../assets/images/home/bg-home-mob.jpg')}
+            style={styles.bg}
+            resizeMode="cover"
+        >
+            <NavBar />
+            <View style={styles.content}>
+                <Text style={styles.h3}>SO, YOU WANT TO TRAVEL TO</Text>
+                <Text style={styles.h1}>SPACE</Text>
+                <Text style={styles.p}>
+                    Let&apos;s face it; if you want to go to space, you might as well genuinely go to
+                    outer space and not hover kind of on the edge of it. Well sit back, and relax
+                    because we&apos;ll give you a truly out of this world experience!
+                </Text>
+                <Pressable
+                    style={styles.explore}
+                    onPress={() => {
+                        AsyncStorage.setItem('lastScreen', 'Destination');
+                        router.push('/destination');
+                    }}
+                >
+                    <Text style={styles.exploreText}>EXPLORE</Text>
+                </Pressable>
             </View>
-
-            {selectedPlanet && (
-                <View style={styles.selectedSection}>
-                    <Text style={styles.selectedText}>
-                        Your preferred planet: {selectedPlanet.name}
-                    </Text>
-                    <TouchableOpacity style={styles.clearButton} onPress={clearSavedPlanet}>
-                        <Text style={styles.clearButtonText}>Clear Saved Planet</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
-        </View>
+        </ImageBackground>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    bg: {
         flex: 1,
-        backgroundColor: '#1a1a2e',
-        paddingTop: 60,
-        paddingHorizontal: 20,
+        backgroundColor: '#000'
     },
-    title: {
-        fontSize: 24,
-        color: 'white',
-        textAlign: 'center',
-        marginBottom: 30,
-        fontWeight: 'bold',
-    },
-    planetsGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-    },
-    planetButton: {
-        width: '45%',
+    content: {
+        flex: 1,
+        paddingTop: 120,
         alignItems: 'center',
-        marginBottom: 30,
-        padding: 20,
-        backgroundColor: '#16213e',
-        borderRadius: 15,
-        borderWidth: 2,
+        paddingHorizontal: 36
     },
-    planetEmoji: {
-        fontSize: 50,
-        marginBottom: 10,
-    },
-    planetName: {
-        color: 'white',
+    h3: {
+        color: '#D0D6F9',
+        letterSpacing: 3,
         fontSize: 16,
-        fontWeight: '600',
+        marginBottom: 12,
+        fontWeight: '400'
     },
-    selectedSection: {
-        marginTop: 40,
-        alignItems: 'center',
+    h1: {
+        color: '#ffffff',
+        fontSize: 80,
+        lineHeight: 88,
+        margin: 16,
+        fontWeight: '400'
     },
-    selectedText: {
-        color: '#4fc3f7',
-        fontSize: 18,
+    p: {
+        color: '#D0D6F9',
         textAlign: 'center',
-        marginBottom: 20,
+        fontSize: 15,
+        lineHeight: 25,
+        maxWidth: 444,
+        marginBottom: 40
     },
-    clearButton: {
-        backgroundColor: '#f44336',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 8,
+    explore: {
+        width: 274,
+        height: 274,
+        borderRadius: 137,
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center'
     },
-    clearButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-    },
+    exploreText: {
+        fontSize: 32,
+        fontWeight: '400',
+        letterSpacing: 2,
+        color: '#0B0D17'
+    }
 });
