@@ -1,17 +1,21 @@
 import { useRef, useState } from 'react';
 import { Animated, Dimensions, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, usePathname } from 'expo-router';
+import { SvgXml } from 'react-native-svg';
+
+const logoSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><g fill="none" fill-rule="evenodd"><circle cx="24" cy="24" r="24" fill="#FFF"/><path fill="#0B0D17" d="M24 0c0 16-8 24-24 24 15.718.114 23.718 8.114 24 24 0-16 8-24 24-24-16 0-24-8-24-24z"/></g></svg>`;
 
 export default function NavBar() {
     const [open, setOpen] = useState(false);
     const { width } = Dimensions.get('window');
     const slideAnim = useRef(new Animated.Value(width)).current;
+    const pathname = usePathname();
 
     const openMenu = () => {
         setOpen(true);
         Animated.timing(slideAnim, {
             toValue: width - 254,
-            duration: 300,
+            duration: 250,
             easing: Easing.out(Easing.cubic),
             useNativeDriver: false
         }).start();
@@ -20,15 +24,28 @@ export default function NavBar() {
     const closeMenu = () => {
         Animated.timing(slideAnim, {
             toValue: width,
-            duration: 300,
+            duration: 250,
             easing: Easing.in(Easing.cubic),
             useNativeDriver: false
         }).start(() => setOpen(false));
     };
 
+    const menuItems = [
+        { number: '00', title: 'HOME', route: '/home' },
+        { number: '01', title: 'DESTINATION', route: '/destination' },
+        { number: '02', title: 'CREW', route: '/crew' },
+        { number: '03', title: 'TECHNOLOGY', route: '/technology' }
+    ];
+
+    const isActiveRoute = (route: string) => {
+        return pathname === route;
+    };
+
     return (
         <View style={styles.wrap}>
-            <Text style={styles.logo}>*</Text>
+            <Pressable onPress={() => router.push('/home')}>
+                <SvgXml xml={logoSvg} width={48} height={48} />
+            </Pressable>
             <Pressable onPress={open ? closeMenu : openMenu}>
                 <View style={styles.hamburger}>
                     <View style={styles.line} />
@@ -41,24 +58,24 @@ export default function NavBar() {
                 <>
                     <Pressable style={styles.overlay} onPress={closeMenu} />
                     <Animated.View style={[styles.menu, { left: slideAnim }]}>
-                        <Pressable
-                            style={styles.menuItem}
-                            onPress={() => {
-                                closeMenu();
-                                router.push('/home');
-                            }}
-                        >
-                            <Text style={styles.menuText}>00 HOME</Text>
-                        </Pressable>
-                        <Pressable
-                            style={styles.menuItem}
-                            onPress={() => {
-                                closeMenu();
-                                router.push('/destination');
-                            }}
-                        >
-                            <Text style={styles.menuText}>01 DESTINATION</Text>
-                        </Pressable>
+                        {menuItems.map((item) => (
+                            <Pressable
+                                key={item.number}
+                                style={[
+                                    styles.menuItem,
+                                    isActiveRoute(item.route) && styles.menuItemActive
+                                ]}
+                                onPress={() => {
+                                    closeMenu();
+                                    router.push(item.route);
+                                }}
+                            >
+                                <Text style={styles.menuText}>
+                                    <Text style={styles.menuNumber}>{item.number}</Text>
+                                    {'     '}{item.title}
+                                </Text>
+                            </Pressable>
+                        ))}
                     </Animated.View>
                 </>
             )}
@@ -79,10 +96,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         zIndex: 100
-    },
-    logo: {
-        color: '#ffffff',
-        fontSize: 40
     },
     hamburger: {
         width: 24,
@@ -107,16 +120,27 @@ const styles = StyleSheet.create({
         top: 0,
         bottom: 0,
         width: 254,
-        backgroundColor: 'rgba(11, 13, 23, 0.95)',
+        backgroundColor: 'rgba(11, 13, 23, 0.85)',
+        backdropFilter: 'blur(40px)',
         paddingTop: 118,
         paddingLeft: 32
     },
     menuItem: {
-        paddingVertical: 16
+        paddingVertical: 16,
+        borderLeftWidth: 4,
+        borderLeftColor: 'transparent',
+        paddingLeft: 32
+    },
+    menuItemActive: {
+        borderLeftColor: '#FFFFFF'
     },
     menuText: {
-        color: '#ffffff',
+        fontFamily: 'BarlowCondensed_400Regular',
+        color: '#FFFFFF',
         fontSize: 16,
-        letterSpacing: 2
+        letterSpacing: 2.7
+    },
+    menuNumber: {
+        fontWeight: '700'
     }
 });

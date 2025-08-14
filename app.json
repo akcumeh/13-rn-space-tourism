@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Space Tourism (FEM)",
-    "slug": "13-rn-space-tourism",
+    "name": "Space Tourism - FEM",
+    "slug": "space-tourism-fem",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "spacetourism",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
@@ -14,14 +14,19 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0B0D17"
       },
       "edgeToEdgeEnabled": true
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "Space Tourism - FEM",
+      "shortName": "Space Tourism",
+      "description": "Explore the cosmos with our space tourism experience",
+      "themeColor": "#0B0D17",
+      "backgroundColor": "#0B0D17"
     },
     "plugins": [
       "expo-router",
@@ -31,9 +36,10 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#0B0D17"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

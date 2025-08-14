@@ -1,47 +1,80 @@
-import { useEffect } from 'react';
-import { ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useState } from 'react';
+import { Dimensions, ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import NavBar from '../../components/NavBar';
 
 export default function HomeScreen() {
+    const [isPressed, setIsPressed] = useState(false);
+    const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
+
     useEffect(() => {
-        AsyncStorage.setItem('lastScreen', 'Home');
+        const subscription = Dimensions.addEventListener('change', ({ window }) => {
+            setScreenWidth(window.width);
+        });
+        return () => subscription?.remove();
     }, []);
 
+    const getBackgroundSource = () => {
+        if (screenWidth <= 400) {
+            return require('../../assets/images/home/bg-home-mob.jpg');
+        } else if (screenWidth < 1000) {
+            return require('../../assets/images/home/bg-home-tab.jpg');
+        }
+    };
+
+    const isDesktop = screenWidth >= 1000;
+
     return (
-        <ImageBackground
-            source={require('../../assets/images/home/bg-home-mob.jpg')}
-            style={styles.bg}
-            resizeMode="cover"
-        >
-            <NavBar />
-            <View style={styles.content}>
-                <Text style={styles.h3}>SO, YOU WANT TO TRAVEL TO</Text>
-                <Text style={styles.h1}>SPACE</Text>
-                <Text style={styles.p}>
-                    Let&apos;s face it; if you want to go to space, you might as well genuinely go to
-                    outer space and not hover kind of on the edge of it. Well sit back, and relax
-                    because we&apos;ll give you a truly out of this world experience!
-                </Text>
-                <Pressable
-                    style={styles.explore}
-                    onPress={() => {
-                        AsyncStorage.setItem('lastScreen', 'Destination');
-                        router.push('/destination');
-                    }}
-                >
-                    <Text style={styles.exploreText}>EXPLORE</Text>
-                </Pressable>
-            </View>
-        </ImageBackground>
+        <View style={[styles.container, isDesktop && styles.desktopContainer]}>
+            <ImageBackground
+                source={getBackgroundSource()}
+                style={[styles.bg, isDesktop && styles.desktopBg]}
+                resizeMode="cover"
+            >
+                <NavBar />
+                <View style={[styles.content, isDesktop && styles.desktopContent]}>
+                    <Text style={styles.pageTitle}>
+                        <Text style={styles.pageNumber}>00</Text>
+                        {'     '}HOME
+                    </Text>
+                    <Text style={styles.h3}>SO, YOU WANT TO TRAVEL TO</Text>
+                    <Text style={styles.h1}>SPACE</Text>
+                    <Text style={styles.p}>
+                        Let&apos;s face it; if you want to go to space, you might as well genuinely go to
+                        outer space and not hover kind of on the edge of it. Well sit back, and relax
+                        because we&apos;ll give you a truly out of this world experience!
+                    </Text>
+                    <Pressable
+                        style={[styles.explore, isPressed && styles.exploreHover]}
+                        onPress={() => router.push('/destination')}
+                        onPressIn={() => setIsPressed(true)}
+                        onPressOut={() => setIsPressed(false)}
+                    >
+                        <Text style={[styles.exploreText, isPressed && styles.exploreTextHover]}>
+                            EXPLORE
+                        </Text>
+                    </Pressable>
+                </View>
+            </ImageBackground>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1
+    },
+    desktopContainer: {
+        alignItems: 'center',
+        backgroundColor: '#0B0D17'
+    },
     bg: {
         flex: 1,
-        backgroundColor: '#000'
+        backgroundColor: '#0B0D17'
+    },
+    desktopBg: {
+        width: 960,
+        maxWidth: '100%'
     },
     content: {
         flex: 1,
@@ -49,19 +82,34 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 36
     },
+    desktopContent: {
+        paddingHorizontal: 24
+    },
+    pageTitle: {
+        fontFamily: 'BarlowCondensed_400Regular',
+        fontSize: 16,
+        letterSpacing: 2.7,
+        color: '#FFFFFF',
+        marginBottom: 32,
+        textAlign: 'center'
+    },
+    pageNumber: {
+        fontWeight: '700',
+        opacity: 0.25
+    },
     h3: {
         color: '#D0D6F9',
         letterSpacing: 3,
         fontSize: 16,
         marginBottom: 12,
-        fontWeight: '400'
+        fontFamily: 'BarlowCondensed_400Regular'
     },
     h1: {
-        color: '#ffffff',
+        color: '#FFFFFF',
         fontSize: 80,
         lineHeight: 88,
         margin: 16,
-        fontWeight: '400'
+        fontFamily: 'Bellefair_400Regular'
     },
     p: {
         color: '#D0D6F9',
@@ -69,20 +117,32 @@ const styles = StyleSheet.create({
         fontSize: 15,
         lineHeight: 25,
         maxWidth: 444,
-        marginBottom: 40
+        marginBottom: 40,
+        fontFamily: 'Barlow_400Regular'
     },
     explore: {
         width: 274,
         height: 274,
         borderRadius: 137,
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFFF',
         alignItems: 'center',
         justifyContent: 'center'
     },
+    exploreHover: {
+        backgroundColor: '#FFFFFF',
+        shadowColor: '#FFFFFF',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 80,
+        elevation: 20
+    },
     exploreText: {
         fontSize: 32,
-        fontWeight: '400',
+        fontFamily: 'Bellefair_400Regular',
         letterSpacing: 2,
         color: '#0B0D17'
+    },
+    exploreTextHover: {
+        color: 'rgba(11, 13, 23, 0.5)'
     }
 });
