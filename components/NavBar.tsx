@@ -1,9 +1,7 @@
 import { useRef, useState } from 'react';
 import { Animated, Dimensions, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, usePathname } from 'expo-router';
-import { SvgXml } from 'react-native-svg';
-
-const logoSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><g fill="none" fill-rule="evenodd"><circle cx="24" cy="24" r="24" fill="#FFF"/><path fill="#0B0D17" d="M24 0c0 16-8 24-24 24 15.718.114 23.718 8.114 24 24 0-16 8-24 24-24-16 0-24-8-24-24z"/></g></svg>`;
+import LogoSvg from '../assets/images/shared/logo.svg';
 
 export default function NavBar() {
     const [open, setOpen] = useState(false);
@@ -33,18 +31,22 @@ export default function NavBar() {
     const menuItems = [
         { number: '00', title: 'HOME', route: '/home' },
         { number: '01', title: 'DESTINATION', route: '/destination' },
-        { number: '02', title: 'CREW', route: '/crew' },
-        { number: '03', title: 'TECHNOLOGY', route: '/technology' }
+        { number: '02', title: 'CREW', route: '/crew' }
     ];
 
     const isActiveRoute = (route: string) => {
         return pathname === route;
     };
 
+    const navigateToScreen = (route: string) => {
+        closeMenu();
+        router.push(route as any);
+    };
+
     return (
         <View style={styles.wrap}>
-            <Pressable onPress={() => router.push('/home')}>
-                <SvgXml xml={logoSvg} width={48} height={48} />
+            <Pressable onPress={() => navigateToScreen('/home')}>
+                <LogoSvg width={48} height={48} />
             </Pressable>
             <Pressable onPress={open ? closeMenu : openMenu}>
                 <View style={styles.hamburger}>
@@ -65,10 +67,7 @@ export default function NavBar() {
                                     styles.menuItem,
                                     isActiveRoute(item.route) && styles.menuItemActive
                                 ]}
-                                onPress={() => {
-                                    closeMenu();
-                                    router.push(item.route);
-                                }}
+                                onPress={() => navigateToScreen(item.route)}
                             >
                                 <Text style={styles.menuText}>
                                     <Text style={styles.menuNumber}>{item.number}</Text>
