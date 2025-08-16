@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View, LayoutAnimation } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
+import { Animated } from 'react-native';
 import NavBar from '../../components/NavBar';
 import destinationData from '../../assets/data.json';
 
@@ -25,7 +27,24 @@ const destinationImages = {
 export default function DestinationScreen() {
     const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
 
-    // Fix the dependency warning by memoizing destinations
+    const [buttonOpacity] = useState(new Animated.Value(0));
+
+    useEffect(() => {
+        if (selectedDestination) {
+            Animated.timing(buttonOpacity, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+            }).start();
+        } else {
+            Animated.timing(buttonOpacity, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start();
+        }
+    }, [selectedDestination]);
+
     const destinations = destinationData.destinations;
 
     useEffect(() => {
@@ -122,6 +141,14 @@ export default function DestinationScreen() {
                     <Text style={styles.placeholder}>Choose a planet to learn more</Text>
                 )}
             </ScrollView>
+
+            {selectedDestination && (
+                <Animated.View style={[styles.navigationButton, { opacity: buttonOpacity }]}>
+                    <Pressable style={styles.navButton} onPress={() => console.log('Navigate to next')}>
+                        <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
+                    </Pressable>
+                </Animated.View>
+            )}
         </ImageBackground>
     );
 }
@@ -235,5 +262,22 @@ const styles = StyleSheet.create({
         color: '#D0D6F9',
         textAlign: 'center',
         marginTop: 40
-    }
+    },
+    navigationButton: {
+        position: 'absolute',
+        bottom: 50,
+        right: 24,
+        zIndex: 10,
+    },
+    navButton: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.25)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backdropFilter: 'blur(10px)',
+    },
 });

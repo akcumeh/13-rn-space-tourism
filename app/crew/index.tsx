@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ImageBackground, Pressable, StyleSheet, Text, View, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
 import NavBar from '../../components/NavBar';
 
 const crewData = [
@@ -34,6 +35,16 @@ const crewData = [
 export default function CrewScreen() {
     const [currentIndex, setCurrentIndex] = useState(0);
 
+    const onGestureEvent = (event) => {
+        const { transX } = event.nativeEvent;
+
+        if ((transX > 50) && (currentIndex > 0)) {
+            setCurrentIndex(currentIndex-1);
+        } else if ((transX < -50) && (currentIndex < crewData.length - 1)) {
+            setCurrentIndex(currentIndex+1);
+        }
+    };
+
     useEffect(() => {
         AsyncStorage.setItem('lastScreen', 'Crew');
     }, []);
@@ -41,39 +52,43 @@ export default function CrewScreen() {
     const currentCrew = crewData[currentIndex];
 
     return (
-        <ImageBackground
-            source={require('../../assets/images/crew/bg-crew-mob.jpg')}
-            style={styles.bg}
-            resizeMode="cover"
-        >
-            <NavBar />
-            <View style={styles.content}>
-                <Text style={styles.pageTitle}>02 MEET YOUR CREW</Text>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <PanGestureHandler onGestureEvent={onGestureEvent}>
+                <ImageBackground
+                    source={require('../../assets/images/crew/bg-crew-mob.jpg')}
+                    style={styles.bg}
+                    resizeMode="cover"
+                >
+                    <NavBar />
+                    <View style={styles.content}>
+                        <Text style={styles.pageTitle}>02 MEET YOUR CREW</Text>
 
-                <View style={styles.crewInfo}>
-                    <Text style={styles.role}>{currentCrew.role.toUpperCase()}</Text>
-                    <Text style={styles.name}>{currentCrew.name.toUpperCase()}</Text>
-                    <Text style={styles.bio}>{currentCrew.bio}</Text>
-                </View>
+                        <View style={styles.crewInfo}>
+                            <Text style={styles.role}>{currentCrew.role.toUpperCase()}</Text>
+                            <Text style={styles.name}>{currentCrew.name.toUpperCase()}</Text>
+                            <Text style={styles.bio}>{currentCrew.bio}</Text>
+                        </View>
 
-                <View style={styles.pagination}>
-                    {crewData.map((_, index) => (
-                        <Pressable
-                            key={index}
-                            style={[
-                                styles.dot,
-                                index === currentIndex && styles.activeDot
-                            ]}
-                            onPress={() => setCurrentIndex(index)}
-                        />
-                    ))}
-                </View>
+                        <View style={styles.pagination}>
+                            {crewData.map((_, index) => (
+                                <Pressable
+                                    key={index}
+                                    style={[
+                                        styles.dot,
+                                        index === currentIndex && styles.activeDot
+                                    ]}
+                                    onPress={() => setCurrentIndex(index)}
+                                />
+                            ))}
+                        </View>
 
-                <View style={styles.imageContainer}>
-                    <Image source={currentCrew.image} style={styles.crewImage} resizeMode="contain" />
-                </View>
-            </View>
-        </ImageBackground>
+                        <View style={styles.imageContainer}>
+                            <Image source={currentCrew.image} style={styles.crewImage} resizeMode="contain" />
+                        </View>
+                    </View>
+                </ImageBackground>
+            </PanGestureHandler>
+        </GestureHandlerRootView>
     );
 }
 
@@ -103,23 +118,24 @@ const styles = StyleSheet.create({
     },
     role: {
         color: 'rgba(255, 255, 255, 0.5)',
-        fontSize: 16,
+        fontSize: 32,
+        lineHeight: 37,
         letterSpacing: 0,
         marginBottom: 8,
         fontFamily: 'Bellefair_400Regular'
     },
     name: {
         color: '#ffffff',
-        fontSize: 24,
-        lineHeight: 28,
+        fontSize: 56,
+        lineHeight: 64,
         textAlign: 'center',
         marginBottom: 16,
         fontFamily: 'Bellefair_400Regular'
     },
     bio: {
         color: '#D0D6F9',
-        fontSize: 15,
-        lineHeight: 25,
+        fontSize: 18,
+        lineHeight: 32,
         textAlign: 'center',
         maxWidth: 327,
         fontFamily: 'Barlow_400Regular'
@@ -143,12 +159,12 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'flex-end',
-        minHeight: 300
+        minHeight: 400,
+        paddingTop: 40
     },
     crewImage: {
-        width: '80%',
-        height: '90%',
-        maxWidth: 300,
-        maxHeight: 400
+        width: 300,
+        height: 400,
+        resizeMode: 'cover'
     }
 });
