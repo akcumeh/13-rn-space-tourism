@@ -38,6 +38,7 @@ export default function RootLayout() {
                 <Stack.Screen name="home/index" />
                 <Stack.Screen name="destination/index" />
                 <Stack.Screen name="crew/index" />
+                <Stack.Screen name="technology/index" />
             </Stack>
             <StatusBar style="light" />
         </>

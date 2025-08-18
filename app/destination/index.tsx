@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View, LayoutAnimation } from 'react-native';
+import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View, LayoutAnimation, Dimensions, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Animated } from 'react-native';
 import NavBar from '../../components/NavBar';
 import destinationData from '../../assets/data.json';
 
@@ -26,43 +26,45 @@ const destinationImages = {
 
 export default function DestinationScreen() {
     const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
-
+    const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
     const [buttonOpacity] = useState(new Animated.Value(0));
-
-    useEffect(() => {
-        if (selectedDestination) {
-            Animated.timing(buttonOpacity, {
-                toValue: 1,
-                duration: 300,
-                useNativeDriver: true,
-            }).start();
-        } else {
-            Animated.timing(buttonOpacity, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: true,
-            }).start();
-        }
-    }, [selectedDestination]);
 
     const destinations = destinationData.destinations;
 
     useEffect(() => {
-        const loadLastPlanet = async () => {
+        const subscription = Dimensions.addEventListener('change', ({ window }) => {
+            setScreenWidth(window.width);
+        });
+        return () => subscription?.remove();
+    }, []);
+
+    useEffect(() => {
+        const loadLastDestination = async () => {
             try {
-                const lastPlanet = await AsyncStorage.getItem('lastPlanet');
-                if (lastPlanet) {
-                    const planet = destinations.find(d => d.name === lastPlanet);
-                    if (planet) {
-                        setSelectedDestination(planet);
+                const lastDestination = await AsyncStorage.getItem('lastDestination');
+                if (lastDestination) {
+                    const destination = destinations.find(d => d.name === lastDestination);
+                    if (destination) {
+                        setSelectedDestination(destination);
                     }
+                } else {
+                    // Default to first destination if none saved
+                    setSelectedDestination(destinations[0]);
                 }
             } catch (error) {
-                console.log('Error loading last planet:', error);
+                console.log('Error loading last destination:', error);
+                // Fallback to first destination on error
+                setSelectedDestination(destinations[0]);
             }
         };
-        loadLastPlanet();
-    });
+        loadLastDestination();
+
+        Animated.timing(buttonOpacity, {
+            toValue: 1,
+            duration: 250,
+            useNativeDriver: true,
+        }).start();
+    }, [destinations, buttonOpacity]);
 
     const selectDestination = async (destination: Destination) => {
         LayoutAnimation.configureNext({
@@ -72,15 +74,29 @@ export default function DestinationScreen() {
         });
         setSelectedDestination(destination);
         try {
-            await AsyncStorage.setItem('lastPlanet', destination.name);
+            await AsyncStorage.setItem('lastDestination', destination.name);
         } catch (error) {
-            console.log('Error saving planet:', error);
+            console.log('Error saving destination:', error);
         }
+    };
+
+    const getBackgroundSource = () => {
+        if (screenWidth < 640) {
+            return require('../../assets/images/destination/background-destination-mobile.jpg');
+        } else if (screenWidth < 960) {
+            return require('../../assets/images/destination/background-destination-tablet.jpg');
+        } else {
+            return require('../../assets/images/destination/background-destination-desktop.jpg');
+        }
+    };
+
+    const navigateToNext = () => {
+        router.push('/crew');
     };
 
     return (
         <ImageBackground
-            source={require('../../assets/images/destination/bg-dest-mob.jpg')}
+            source={getBackgroundSource()}
             style={styles.bg}
             resizeMode="cover"
         >
@@ -144,7 +160,7 @@ export default function DestinationScreen() {
 
             {selectedDestination && (
                 <Animated.View style={[styles.navigationButton, { opacity: buttonOpacity }]}>
-                    <Pressable style={styles.navButton} onPress={() => console.log('Navigate to next')}>
+                    <Pressable style={styles.navButton} onPress={navigateToNext}>
                         <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
                     </Pressable>
                 </Animated.View>
@@ -278,6 +294,5 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255, 255, 255, 0.25)',
         alignItems: 'center',
         justifyContent: 'center',
-        backdropFilter: 'blur(10px)',
     },
 });

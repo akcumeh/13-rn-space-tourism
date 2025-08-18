@@ -31,7 +31,8 @@ export default function NavBar() {
     const menuItems = [
         { number: '00', title: 'HOME', route: '/home' },
         { number: '01', title: 'DESTINATION', route: '/destination' },
-        { number: '02', title: 'CREW', route: '/crew' }
+        { number: '02', title: 'CREW', route: '/crew' },
+        { number: '03', title: 'TECHNOLOGY', route: '/technology' }
     ];
 
     const isActiveRoute = (route: string) => {

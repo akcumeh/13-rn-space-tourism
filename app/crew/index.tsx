@@ -1,146 +1,214 @@
 import { useEffect, useState } from 'react';
-import { ImageBackground, Pressable, StyleSheet, Text, View, Image } from 'react-native';
+import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View, LayoutAnimation, Dimensions, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
+import { Ionicons } from '@expo/vector-icons';
 import NavBar from '../../components/NavBar';
+import crewData from '../../assets/data.json';
 
-const crewData = [
-    {
-        name: "Douglas Hurley",
-        role: "Commander",
-        bio: "Douglas Gerald Hurley is an American engineer, former Marine Corps pilot and former NASA astronaut. He launched into space for the third time as commander of Crew Dragon Demo-2.",
-        image: require('../../assets/images/crew/image-douglas-hurley.png')
-    },
-    {
-        name: "Mark Shuttleworth",
-        role: "Mission Specialist",
-        bio: "Mark Richard Shuttleworth is the founder and CEO of Canonical, the company behind the Linux-based Ubuntu operating system. Shuttleworth became the first South African to travel to space as a space tourist.",
-        image: require('../../assets/images/crew/image-mark-shuttleworth.png')
-    },
-    {
-        name: "Victor Glover",
-        role: "Pilot",
-        bio: "Pilot on the first operational flight of the SpaceX Crew Dragon to the International Space Station. Glover is a commander in the U.S. Navy where he pilots an F/A-18.He was a crew member of Expedition 64, and served as a station systems flight engineer.",
-        image: require('../../assets/images/crew/image-victor-glover.png')
-    },
-    {
-        name: "Anousheh Ansari",
-        role: "Flight Engineer",
-        bio: "Anousheh Ansari is an Iranian American engineer and co-founder of Prodea Systems. Ansari was the fourth self-funded space tourist, the first self-funded woman to fly to the ISS, and the first Iranian in space.",
-        image: require('../../assets/images/crew/image-anousheh-ansari.png')
-    }
-];
+type CrewMember = {
+    name: string;
+    images: {
+        png: string;
+        webp: string;
+    };
+    role: string;
+    bio: string;
+};
+
+const crewImages = {
+    'Douglas Hurley': require('../../assets/images/crew/image-douglas-hurley.png'),
+    'Mark Shuttleworth': require('../../assets/images/crew/image-mark-shuttleworth.png'),
+    'Victor Glover': require('../../assets/images/crew/image-victor-glover.png'),
+    'Anousheh Ansari': require('../../assets/images/crew/image-anousheh-ansari.png'),
+};
 
 export default function CrewScreen() {
-    const [currentIndex, setCurrentIndex] = useState(0);
+    const [selectedCrew, setSelectedCrew] = useState<CrewMember | null>(null);
+    const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
+    const [buttonOpacity] = useState(new Animated.Value(0));
 
-    const onGestureEvent = (event) => {
-        const { transX } = event.nativeEvent;
+    const crew = crewData.crew;
 
-        if ((transX > 50) && (currentIndex > 0)) {
-            setCurrentIndex(currentIndex-1);
-        } else if ((transX < -50) && (currentIndex < crewData.length - 1)) {
-            setCurrentIndex(currentIndex+1);
+    useEffect(() => {
+        const subscription = Dimensions.addEventListener('change', ({ window }) => {
+            setScreenWidth(window.width);
+        });
+        return () => subscription?.remove();
+    }, []);
+
+    useEffect(() => {
+        const loadLastCrewMember = async () => {
+            try {
+                const lastCrewMember = await AsyncStorage.getItem('lastCrewMember');
+                if (lastCrewMember) {
+                    const member = crew.find(c => c.name === lastCrewMember);
+                    if (member) {
+                        setSelectedCrew(member);
+                    }
+                } else {
+                    // Default to first crew member if none saved
+                    setSelectedCrew(crew[0]);
+                }
+            } catch (error) {
+                console.log('Error loading last crew member:', error);
+                // Fallback to first crew member on error
+                setSelectedCrew(crew[0]);
+            }
+        };
+        
+        loadLastCrewMember();
+        AsyncStorage.setItem('lastScreen', 'Crew');
+
+        Animated.timing(buttonOpacity, {
+            toValue: 1,
+            duration: 250,
+            useNativeDriver: true,
+        }).start();
+    }, [crew, buttonOpacity]);
+
+    const selectCrewMember = async (member: CrewMember) => {
+        LayoutAnimation.configureNext({
+            duration: 250,
+            create: { type: 'easeInEaseOut', property: 'opacity' },
+            update: { type: 'easeInEaseOut' }
+        });
+        setSelectedCrew(member);
+        try {
+            await AsyncStorage.setItem('lastCrewMember', member.name);
+        } catch (error) {
+            console.log('Error saving crew member:', error);
         }
     };
 
-    useEffect(() => {
-        AsyncStorage.setItem('lastScreen', 'Crew');
-    }, []);
+    const getBackgroundSource = () => {
+        if (screenWidth < 640) {
+            return require('../../assets/images/crew/background-crew-mobile.jpg');
+        } else if (screenWidth < 960) {
+            return require('../../assets/images/crew/background-crew-tablet.jpg');
+        } else {
+            return require('../../assets/images/crew/background-crew-desktop.jpg');
+        }
+    };
 
-    const currentCrew = crewData[currentIndex];
+    const getCrewImage = (member: CrewMember) => {
+        return crewImages[member.name as keyof typeof crewImages];
+    };
+
+    const navigateToNext = () => {
+        router.push('/technology');
+    };
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <PanGestureHandler onGestureEvent={onGestureEvent}>
-                <ImageBackground
-                    source={require('../../assets/images/crew/bg-crew-mob.jpg')}
-                    style={styles.bg}
-                    resizeMode="cover"
-                >
-                    <NavBar />
-                    <View style={styles.content}>
-                        <Text style={styles.pageTitle}>02 MEET YOUR CREW</Text>
+        <ImageBackground
+            source={getBackgroundSource()}
+            style={styles.bg}
+            resizeMode="cover"
+        >
+            <NavBar />
+            <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+                <Text style={styles.pageTitle}>
+                    <Text style={styles.pageNumber}>02</Text>
+                    {'     '}MEET YOUR CREW
+                </Text>
 
-                        <View style={styles.crewInfo}>
-                            <Text style={styles.role}>{currentCrew.role.toUpperCase()}</Text>
-                            <Text style={styles.name}>{currentCrew.name.toUpperCase()}</Text>
-                            <Text style={styles.bio}>{currentCrew.bio}</Text>
+                {selectedCrew ? (
+                    <>
+                        <View style={styles.infoContainer}>
+                            <Text style={styles.role}>{selectedCrew.role.toUpperCase()}</Text>
+                            <Text style={styles.crewName}>{selectedCrew.name.toUpperCase()}</Text>
+                            <Text style={styles.crewBio}>{selectedCrew.bio}</Text>
                         </View>
 
-                        <View style={styles.pagination}>
-                            {crewData.map((_, index) => (
+                        <View style={styles.navigationContainer}>
+                            {crew.map((member, index) => (
                                 <Pressable
-                                    key={index}
+                                    key={member.name}
                                     style={[
                                         styles.dot,
-                                        index === currentIndex && styles.activeDot
+                                        selectedCrew?.name === member.name && styles.activeDot
                                     ]}
-                                    onPress={() => setCurrentIndex(index)}
+                                    onPress={() => selectCrewMember(member)}
                                 />
                             ))}
                         </View>
 
                         <View style={styles.imageContainer}>
-                            <Image source={currentCrew.image} style={styles.crewImage} resizeMode="contain" />
+                            <Image
+                                source={getCrewImage(selectedCrew)}
+                                style={styles.crewImage}
+                                resizeMode="contain"
+                            />
                         </View>
-                    </View>
-                </ImageBackground>
-            </PanGestureHandler>
-        </GestureHandlerRootView>
+                    </>
+                ) : (
+                    <Text style={styles.placeholder}>Loading crew...</Text>
+                )}
+            </ScrollView>
+
+            <Animated.View style={[styles.navigationButton, { opacity: buttonOpacity }]}>
+                <Pressable style={styles.navButton} onPress={navigateToNext}>
+                    <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
+                </Pressable>
+            </Animated.View>
+        </ImageBackground>
     );
 }
 
 const styles = StyleSheet.create({
     bg: {
         flex: 1,
-        backgroundColor: '#000'
+        backgroundColor: '#0B0D17'
+    },
+    container: {
+        flex: 1,
+        paddingTop: 96
     },
     content: {
-        flex: 1,
-        paddingTop: 120,
-        paddingHorizontal: 24
+        flexGrow: 1,
+        paddingHorizontal: 24,
+        paddingBottom: 150
     },
     pageTitle: {
         fontFamily: 'BarlowCondensed_400Regular',
-        color: '#ffffff',
         fontSize: 16,
         letterSpacing: 2.7,
-        textAlign: 'center',
+        color: '#FFFFFF',
         marginBottom: 32,
-        fontWeight: '400'
+        textAlign: 'center'
     },
-    crewInfo: {
+    pageNumber: {
+        fontWeight: '700',
+        opacity: 0.25
+    },
+    infoContainer: {
         alignItems: 'center',
-        marginBottom: 40,
-        paddingHorizontal: 20
+        paddingHorizontal: 24,
+        marginBottom: 40
     },
     role: {
+        fontFamily: 'Bellefair_400Regular',
+        fontSize: 16,
         color: 'rgba(255, 255, 255, 0.5)',
-        fontSize: 32,
-        lineHeight: 37,
-        letterSpacing: 0,
         marginBottom: 8,
-        fontFamily: 'Bellefair_400Regular'
+        textAlign: 'center'
     },
-    name: {
-        color: '#ffffff',
-        fontSize: 56,
-        lineHeight: 64,
-        textAlign: 'center',
+    crewName: {
+        fontFamily: 'Bellefair_400Regular',
+        fontSize: 24,
+        color: '#FFFFFF',
         marginBottom: 16,
-        fontFamily: 'Bellefair_400Regular'
+        textAlign: 'center'
     },
-    bio: {
+    crewBio: {
+        fontFamily: 'Barlow_400Regular',
+        fontSize: 15,
+        lineHeight: 25,
         color: '#D0D6F9',
-        fontSize: 18,
-        lineHeight: 32,
         textAlign: 'center',
-        maxWidth: 327,
-        fontFamily: 'Barlow_400Regular'
+        maxWidth: 327
     },
-    pagination: {
+    navigationContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         gap: 16,
@@ -153,18 +221,40 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.17)'
     },
     activeDot: {
-        backgroundColor: '#ffffff'
+        backgroundColor: '#FFFFFF'
     },
     imageContainer: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'flex-end',
-        minHeight: 400,
-        paddingTop: 40
+        minHeight: 300
     },
     crewImage: {
         width: 300,
         height: 400,
-        resizeMode: 'cover'
-    }
+        maxHeight: '100%'
+    },
+    placeholder: {
+        fontFamily: 'Barlow_400Regular',
+        fontSize: 16,
+        color: '#D0D6F9',
+        textAlign: 'center',
+        marginTop: 40
+    },
+    navigationButton: {
+        position: 'absolute',
+        bottom: 50,
+        right: 24,
+        zIndex: 10,
+    },
+    navButton: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.25)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
 });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Dimensions, ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, ImageBackground, Pressable, StyleSheet, Text, View, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import NavBar from '../../components/NavBar';
 
@@ -15,14 +15,16 @@ export default function HomeScreen() {
     }, []);
 
     const getBackgroundSource = () => {
-        if (screenWidth <= 400) {
-            return require('../../assets/images/home/bg-home-mob.jpg');
-        } else if (screenWidth < 1000) {
-            return require('../../assets/images/home/bg-home-tab.jpg');
+        if (screenWidth < 640) {
+            return require('../../assets/images/home/background-home-mobile.jpg');
+        } else if (screenWidth < 960) {
+            return require('../../assets/images/home/background-home-tablet.jpg');
+        } else {
+            return require('../../assets/images/home/background-home-desktop.jpg');
         }
     };
 
-    const isDesktop = screenWidth >= 1000;
+    const isDesktop = screenWidth >= 960;
 
     return (
         <View style={[styles.container, isDesktop && styles.desktopContainer]}>
@@ -32,7 +34,11 @@ export default function HomeScreen() {
                 resizeMode="cover"
             >
                 <NavBar />
-                <View style={[styles.content, isDesktop && styles.desktopContent]}>
+                <ScrollView 
+                    style={styles.scrollContainer} 
+                    contentContainerStyle={[styles.content, isDesktop && styles.desktopContent]}
+                    showsVerticalScrollIndicator={false}
+                >
                     <Text style={styles.pageTitle}>
                         <Text style={styles.pageNumber}>00</Text>
                         {'     '}HOME
@@ -54,7 +60,7 @@ export default function HomeScreen() {
                             EXPLORE
                         </Text>
                     </Pressable>
-                </View>
+                </ScrollView>
             </ImageBackground>
         </View>
     );
@@ -76,11 +82,15 @@ const styles = StyleSheet.create({
         width: 960,
         maxWidth: '100%'
     },
-    content: {
+    scrollContainer: {
         flex: 1,
+    },
+    content: {
+        flexGrow: 1,
         paddingTop: 120,
         alignItems: 'center',
-        paddingHorizontal: 36
+        paddingHorizontal: 36,
+        paddingBottom: 50
     },
     desktopContent: {
         paddingHorizontal: 24
