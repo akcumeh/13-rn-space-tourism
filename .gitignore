@@ -39,6 +39,7 @@ expo-env.d.ts
 .env.production.local
 .env*.local
 .vscode/
+.claude/
 
 # Testing
 /coverage

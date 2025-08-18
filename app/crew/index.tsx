@@ -109,7 +109,7 @@ export default function CrewScreen() {
             <ScrollView style={styles.container} contentContainerStyle={styles.content}>
                 <Text style={styles.pageTitle}>
                     <Text style={styles.pageNumber}>02</Text>
-                    {'     '}MEET YOUR CREW
+                    {'  '}MEET YOUR CREW
                 </Text>
 
                 {selectedCrew ? (
@@ -166,15 +166,14 @@ const styles = StyleSheet.create({
     },
     content: {
         flexGrow: 1,
-        paddingHorizontal: 24,
-        paddingBottom: 150
+        paddingHorizontal: 24
     },
     pageTitle: {
         fontFamily: 'BarlowCondensed_400Regular',
         fontSize: 16,
         letterSpacing: 2.7,
         color: '#FFFFFF',
-        marginBottom: 32,
+        marginBottom: 40,
         textAlign: 'center'
     },
     pageNumber: {
@@ -188,7 +187,7 @@ const styles = StyleSheet.create({
     },
     role: {
         fontFamily: 'Bellefair_400Regular',
-        fontSize: 16,
+        fontSize: 18,
         color: 'rgba(255, 255, 255, 0.5)',
         marginBottom: 8,
         textAlign: 'center'
@@ -202,11 +201,11 @@ const styles = StyleSheet.create({
     },
     crewBio: {
         fontFamily: 'Barlow_400Regular',
-        fontSize: 15,
-        lineHeight: 25,
+        fontSize: 16,
+        lineHeight: 30,
         color: '#D0D6F9',
         textAlign: 'center',
-        maxWidth: 327
+        maxWidth: 400
     },
     navigationContainer: {
         flexDirection: 'row',

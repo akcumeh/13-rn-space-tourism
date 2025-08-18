@@ -41,7 +41,7 @@ export default function HomeScreen() {
                 >
                     <Text style={styles.pageTitle}>
                         <Text style={styles.pageNumber}>00</Text>
-                        {'     '}HOME
+                        {'  '}HOME
                     </Text>
                     <Text style={styles.h3}>SO, YOU WANT TO TRAVEL TO</Text>
                     <Text style={styles.h1}>SPACE</Text>

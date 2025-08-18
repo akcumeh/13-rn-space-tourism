@@ -48,12 +48,10 @@ export default function DestinationScreen() {
                         setSelectedDestination(destination);
                     }
                 } else {
-                    // Default to first destination if none saved
                     setSelectedDestination(destinations[0]);
                 }
             } catch (error) {
                 console.log('Error loading last destination:', error);
-                // Fallback to first destination on error
                 setSelectedDestination(destinations[0]);
             }
         };
@@ -104,7 +102,7 @@ export default function DestinationScreen() {
             <ScrollView style={styles.container} contentContainerStyle={styles.content}>
                 <Text style={styles.pageTitle}>
                     <Text style={styles.pageNumber}>01</Text>
-                    {'     '}PICK YOUR DESTINATION
+                    {'  '}PICK YOUR DESTINATION
                 </Text>
 
                 {selectedDestination ? (
@@ -176,7 +174,7 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        paddingTop: 96
+        paddingTop: 120
     },
     content: {
         alignItems: 'center',
