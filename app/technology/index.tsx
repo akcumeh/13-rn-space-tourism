@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View, LayoutAnimation, Dimensions, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import useSwipe from '@/hooks/useSwipe';
+import useDimensions from '@/hooks/useDimensions';
 import NavBar from '../../components/NavBar';
 import technologyData from '../../assets/data.json';
 
@@ -32,17 +33,29 @@ const technologyImages = {
 
 export default function TechnologyScreen() {
     const [selectedTechnology, setSelectedTechnology] = useState<Technology | null>(null);
-    const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
-    const [buttonOpacity] = useState(new Animated.Value(0));
+    const dimensions = useDimensions();
+    const fadeAnim = useState(new Animated.Value(0))[0];
+    const handleContentSwipe = (direction: 'left' | 'right') => {
+        const currentIndex = technologies.findIndex(tech => tech.name === selectedTechnology?.name);
+        if (direction === 'left' && currentIndex < technologies.length - 1) {
+            selectTechnology(technologies[currentIndex + 1]);
+        } else if (direction === 'right' && currentIndex > 0) {
+            selectTechnology(technologies[currentIndex - 1]);
+        }
+    };
+
+    const swipeHandler = useSwipe('technology', handleContentSwipe);
 
     const technologies = technologyData.technology;
 
     useEffect(() => {
-        const subscription = Dimensions.addEventListener('change', ({ window }) => {
-            setScreenWidth(window.width);
-        });
-        return () => subscription?.remove();
-    }, []);
+        // Page fade-in animation
+        Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+        }).start();
+    }, [fadeAnim]);
 
     useEffect(() => {
         const loadLastTechnology = async () => {
@@ -65,12 +78,7 @@ export default function TechnologyScreen() {
         };
         loadLastTechnology();
 
-        Animated.timing(buttonOpacity, {
-            toValue: 1,
-            duration: 250,
-            useNativeDriver: true,
-        }).start();
-    }, [technologies, buttonOpacity]);
+    }, [technologies]);
 
     const selectTechnology = async (technology: Technology) => {
         LayoutAnimation.configureNext({
@@ -87,9 +95,9 @@ export default function TechnologyScreen() {
     };
 
     const getBackgroundSource = () => {
-        if (screenWidth < 640) {
+        if (dimensions.isMobile) {
             return require('../../assets/images/technology/background-technology-mobile.jpg');
-        } else if (screenWidth < 960) {
+        } else if (dimensions.isTablet) {
             return require('../../assets/images/technology/background-technology-tablet.jpg');
         } else {
             return require('../../assets/images/technology/background-technology-desktop.jpg');
@@ -99,142 +107,140 @@ export default function TechnologyScreen() {
     const getTechnologyImage = (technology: Technology) => {
         const imageSet = technologyImages[technology.name as keyof typeof technologyImages];
         // Use portrait for larger screens, landscape for smaller
-        return screenWidth >= 960 ? imageSet.portrait : imageSet.landscape;
+        return dimensions.isDesktop ? imageSet.portrait : imageSet.landscape;
     };
 
-    const navigateToNext = () => {
-        router.push('/home');
-    };
 
-    const isDesktop = screenWidth >= 960;
+    const styles = createStyles(dimensions);
 
     return (
-        <ImageBackground
-            source={getBackgroundSource()}
-            style={styles.bg}
-            resizeMode="cover"
-        >
-            <NavBar />
-            <ScrollView 
-                style={styles.container} 
-                contentContainerStyle={[styles.content, isDesktop && styles.desktopContent]}
-            >
-                <Text style={[styles.pageTitle, isDesktop && styles.desktopPageTitle]}>
-                    <Text style={styles.pageNumber}>03</Text>
-                    {'     '}SPACE LAUNCH 101
-                </Text>
+        <Animated.View style={{ flex: 1, minHeight: Dimensions.get('window').height, opacity: fadeAnim }} {...swipeHandler}>
+            <ScrollView>
+                <ImageBackground
+                    source={getBackgroundSource()}
+                    style={styles.bg}
+                    resizeMode="cover"
+                >
+                    <NavBar />
+                    <ScrollView
+                        style={styles.container}
+                        contentContainerStyle={[styles.content, dimensions.isDesktop && styles.desktopContent]}
+                    >
+                        <Text style={[styles.pageTitle, dimensions.isDesktop && styles.desktopPageTitle]}>
+                            <Text style={styles.pageNumber}>03</Text>
+                            {'     '}SPACE LAUNCH 101
+                        </Text>
 
-                {isDesktop ? (
-                    <View style={styles.desktopLayout}>
-                        <View style={styles.leftColumn}>
-                            <View style={styles.navigationContainer}>
-                                {technologies.map((technology, index) => (
-                                    <Pressable
-                                        key={technology.name}
-                                        style={[
-                                            styles.navNumber,
-                                            selectedTechnology?.name === technology.name && styles.navNumberActive
-                                        ]}
-                                        onPress={() => selectTechnology(technology)}
-                                    >
-                                        <Text style={[
-                                            styles.navNumberText,
-                                            selectedTechnology?.name === technology.name && styles.navNumberTextActive
-                                        ]}>
-                                            {index + 1}
-                                        </Text>
-                                    </Pressable>
-                                ))}
+                        {dimensions.isDesktop ? (
+                            <View style={styles.desktopLayout}>
+                                <View style={[styles.navigationContainer, dimensions.isDesktop && styles.desktopNavigationContainer]}>
+                                    {technologies.map((technology, index) => (
+                                        <Pressable
+                                            key={technology.name}
+                                            style={[
+                                                styles.navNumber,
+                                                selectedTechnology?.name === technology.name && styles.navNumberActive
+                                            ]}
+                                            onPress={() => selectTechnology(technology)}
+                                        >
+                                            <Text style={[
+                                                styles.navNumberText,
+                                                selectedTechnology?.name === technology.name && styles.navNumberTextActive
+                                            ]}>
+                                                {index + 1}
+                                            </Text>
+                                        </Pressable>
+                                    ))}
+                                </View>
+
+                                <View style={styles.leftColumn}>
+                                    {selectedTechnology && (
+                                        <View style={styles.infoContainer}>
+                                            <Text style={[styles.terminology, styles.desktopTerminology]}>THE TERMINOLOGY...</Text>
+                                            <Text style={[styles.technologyName, styles.desktopTechnologyName]}>{selectedTechnology.name.toUpperCase()}</Text>
+                                            <Text style={[styles.technologyDescription, styles.desktopDescription]}>{selectedTechnology.description}</Text>
+                                        </View>
+                                    )}
+                                </View>
+
+                                <View style={styles.rightColumn}>
+                                    {selectedTechnology && (
+                                        <Image
+                                            source={getTechnologyImage(selectedTechnology)}
+                                            style={styles.desktopTechnologyImage}
+                                            resizeMode="contain"
+                                        />
+                                    )}
+                                </View>
                             </View>
-
-                            {selectedTechnology && (
-                                <View style={styles.infoContainer}>
-                                    <Text style={[styles.terminology, styles.desktopTerminology]}>THE TERMINOLOGY...</Text>
-                                    <Text style={[styles.technologyName, styles.desktopTechnologyName]}>{selectedTechnology.name.toUpperCase()}</Text>
-                                    <Text style={[styles.technologyDescription, styles.desktopDescription]}>{selectedTechnology.description}</Text>
-                                </View>
-                            )}
-                        </View>
-                        
-                        <View style={styles.rightColumn}>
-                            {selectedTechnology && (
-                                <Image
-                                    source={getTechnologyImage(selectedTechnology)}
-                                    style={styles.desktopTechnologyImage}
-                                    resizeMode="contain"
-                                />
-                            )}
-                        </View>
-                    </View>
-                ) : (
-                    <>
-                        <View style={styles.navigationContainer}>
-                            {technologies.map((technology, index) => (
-                                <Pressable
-                                    key={technology.name}
-                                    style={[
-                                        styles.navNumber,
-                                        selectedTechnology?.name === technology.name && styles.navNumberActive
-                                    ]}
-                                    onPress={() => selectTechnology(technology)}
-                                >
-                                    <Text style={[
-                                        styles.navNumberText,
-                                        selectedTechnology?.name === technology.name && styles.navNumberTextActive
-                                    ]}>
-                                        {index + 1}
-                                    </Text>
-                                </Pressable>
-                            ))}
-                        </View>
-
-                        {selectedTechnology ? (
-                            <>
-                                <Image
-                                    source={getTechnologyImage(selectedTechnology)}
-                                    style={styles.technologyImage}
-                                    resizeMode="contain"
-                                />
-
-                                <View style={styles.infoContainer}>
-                                    <Text style={styles.terminology}>THE TERMINOLOGY...</Text>
-                                    <Text style={styles.technologyName}>{selectedTechnology.name.toUpperCase()}</Text>
-                                    <Text style={styles.technologyDescription}>{selectedTechnology.description}</Text>
-                                </View>
-                            </>
                         ) : (
-                            <Text style={styles.placeholder}>Loading technology...</Text>
-                        )}
-                    </>
-                )}
-            </ScrollView>
+                            <>
+                                <View style={[styles.navigationContainer, dimensions.isDesktop && styles.desktopNavigationContainer]}>
+                                    {technologies.map((technology, index) => (
+                                        <Pressable
+                                            key={technology.name}
+                                            style={[
+                                                styles.navNumber,
+                                                selectedTechnology?.name === technology.name && styles.navNumberActive
+                                            ]}
+                                            onPress={() => selectTechnology(technology)}
+                                        >
+                                            <Text style={[
+                                                styles.navNumberText,
+                                                selectedTechnology?.name === technology.name && styles.navNumberTextActive
+                                            ]}>
+                                                {index + 1}
+                                            </Text>
+                                        </Pressable>
+                                    ))}
+                                </View>
 
-            <Animated.View style={[styles.navigationButton, { opacity: buttonOpacity }]}>
-                <Pressable style={styles.navButton} onPress={navigateToNext}>
-                    <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
-                </Pressable>
-            </Animated.View>
-        </ImageBackground>
+                                {selectedTechnology ? (
+                                    <>
+                                        <Image
+                                            source={getTechnologyImage(selectedTechnology)}
+                                            style={styles.technologyImage}
+                                            resizeMode="contain"
+                                        />
+
+                                        <View style={styles.infoContainer}>
+                                            <Text style={styles.terminology}>THE TERMINOLOGY...</Text>
+                                            <Text style={styles.technologyName}>{selectedTechnology.name.toUpperCase()}</Text>
+                                            <Text style={styles.technologyDescription}>{selectedTechnology.description}</Text>
+                                        </View>
+                                    </>
+                                ) : (
+                                    <Text style={styles.placeholder}>Loading technology...</Text>
+                                )}
+                            </>
+                        )}
+                    </ScrollView>
+
+                </ImageBackground>
+            </ScrollView>
+        </Animated.View>
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (dimensions) => StyleSheet.create({
     bg: {
         flex: 1,
-        backgroundColor: '#0B0D17'
+        backgroundColor: '#0B0D17',
+        minHeight: dimensions.screenHeight
     },
     container: {
         flex: 1,
-        paddingTop: 96
+        paddingTop: dimensions.paddingVertical * 3
     },
     content: {
         alignItems: 'center',
-        paddingHorizontal: 24,
-        paddingBottom: 50
+        paddingHorizontal: dimensions.paddingHorizontal,
+        paddingBottom: dimensions.paddingVertical * 2
     },
     desktopContent: {
-        paddingHorizontal: 80,
-        paddingTop: 200,
+        paddingHorizontal: dimensions.desktopPaddingHorizontal,
+        paddingTop: dimensions.desktopPaddingTop,
+        paddingRight: dimensions.screenWidth * 0.08,
         alignItems: 'stretch'
     },
     desktopLayout: {
@@ -242,7 +248,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         justifyContent: 'space-between',
         width: '100%',
-        gap: 80
+        gap: dimensions.largeGap
     },
     leftColumn: {
         flex: 1,
@@ -255,45 +261,54 @@ const styles = StyleSheet.create({
     },
     desktopPageTitle: {
         alignSelf: 'flex-start',
-        marginBottom: 60
+        marginBottom: dimensions.mediumGap
     },
     desktopTerminology: {
         textAlign: 'left'
     },
     desktopTechnologyName: {
-        fontSize: 56,
+        fontSize: dimensions.titleFontSize * 1.4,
         textAlign: 'left'
     },
     desktopDescription: {
         textAlign: 'left',
-        maxWidth: 444
+        maxWidth: dimensions.screenWidth * 0.35
     },
     desktopTechnologyImage: {
-        width: 400,
-        height: 500,
+        width: dimensions.imageWidth,
+        height: dimensions.imageMaxHeight,
         marginBottom: 0
     },
     pageTitle: {
         fontFamily: 'BarlowCondensed_400Regular',
-        fontSize: 16,
+        fontSize: dimensions.bodyFontSize * 0.8,
         letterSpacing: 2.7,
         color: '#FFFFFF',
-        marginBottom: 32,
+        marginTop: dimensions.paddingVertical,
+        marginBottom: dimensions.smallGap,
         textAlign: 'center'
     },
     pageNumber: {
-        fontWeight: '700',
-        opacity: 0.25
+        fontWeight: 'bold',
+        opacity: 0.5
     },
     navigationContainer: {
         flexDirection: 'row',
-        gap: 16,
-        marginBottom: 32
+        gap: dimensions.smallGap * 0.4,
+        marginBottom: dimensions.smallGap * 0.8,
+        alignItems: 'center'
+    },
+    desktopNavigationContainer: {
+        flexDirection: 'column',
+        gap: dimensions.smallGap * 0.8,
+        marginBottom: 0,
+        marginRight: dimensions.largeGap,
+        alignItems: 'flex-start'
     },
     navNumber: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: dimensions.navButtonSize,
+        height: dimensions.navButtonSize,
+        borderRadius: dimensions.navButtonSize / 2,
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.25)',
         alignItems: 'center',
@@ -306,63 +321,47 @@ const styles = StyleSheet.create({
     },
     navNumberText: {
         fontFamily: 'Bellefair_400Regular',
-        fontSize: 16,
+        fontSize: dimensions.bodyFontSize * 0.6,
         color: '#FFFFFF'
     },
     navNumberTextActive: {
         color: '#0B0D17'
     },
     technologyImage: {
-        width: '100%',
-        height: 170,
-        marginBottom: 34
+        width: dimensions.mobileImageWidth,
+        height: dimensions.mobileImageHeight * 0.34,
+        marginBottom: dimensions.smallGap * 0.85
     },
     infoContainer: {
         alignItems: 'center',
-        maxWidth: 400
+        maxWidth: dimensions.containerMaxWidth * 0.8
     },
     terminology: {
         fontFamily: 'BarlowCondensed_400Regular',
-        fontSize: 14,
+        fontSize: dimensions.bodyFontSize * 0.55,
         letterSpacing: 2.36,
         color: '#D0D6F9',
         marginBottom: 9
     },
     technologyName: {
         fontFamily: 'Bellefair_400Regular',
-        fontSize: 24,
+        fontSize: dimensions.titleFontSize * 0.6,
         color: '#FFFFFF',
         marginBottom: 16,
         textAlign: 'center'
     },
     technologyDescription: {
         fontFamily: 'Barlow_400Regular',
-        fontSize: 15,
+        fontSize: dimensions.bodyFontSize * 0.55,
         lineHeight: 25,
         color: '#D0D6F9',
         textAlign: 'center'
     },
     placeholder: {
         fontFamily: 'Barlow_400Regular',
-        fontSize: 16,
+        fontSize: dimensions.bodyFontSize * 0.6,
         color: '#D0D6F9',
         textAlign: 'center',
-        marginTop: 40
-    },
-    navigationButton: {
-        position: 'absolute',
-        bottom: 50,
-        right: 24,
-        zIndex: 10,
-    },
-    navButton: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.25)',
-        alignItems: 'center',
-        justifyContent: 'center',
+        marginTop: dimensions.smallGap
     },
 });

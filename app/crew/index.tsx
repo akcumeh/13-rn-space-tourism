@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View, LayoutAnimation, Dimensions, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import useSwipe from '@/hooks/useSwipe';
+import useDimensions from '@/hooks/useDimensions';
 import NavBar from '../../components/NavBar';
 import crewData from '../../assets/data.json';
 
@@ -25,17 +26,29 @@ const crewImages = {
 
 export default function CrewScreen() {
     const [selectedCrew, setSelectedCrew] = useState<CrewMember | null>(null);
-    const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
-    const [buttonOpacity] = useState(new Animated.Value(0));
+    const dimensions = useDimensions();
+    const fadeAnim = useState(new Animated.Value(0))[0];
+    const handleContentSwipe = (direction: 'left' | 'right') => {
+        const currentIndex = crew.findIndex(member => member.name === selectedCrew?.name);
+        if (direction === 'left' && currentIndex < crew.length - 1) {
+            selectCrewMember(crew[currentIndex + 1]);
+        } else if (direction === 'right' && currentIndex > 0) {
+            selectCrewMember(crew[currentIndex - 1]);
+        }
+    };
+
+    const swipeHandler = useSwipe('crew', handleContentSwipe);
 
     const crew = crewData.crew;
 
     useEffect(() => {
-        const subscription = Dimensions.addEventListener('change', ({ window }) => {
-            setScreenWidth(window.width);
-        });
-        return () => subscription?.remove();
-    }, []);
+        // Page fade-in animation
+        Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+        }).start();
+    }, [fadeAnim]);
 
     useEffect(() => {
         const loadLastCrewMember = async () => {
@@ -60,12 +73,7 @@ export default function CrewScreen() {
         loadLastCrewMember();
         AsyncStorage.setItem('lastScreen', 'Crew');
 
-        Animated.timing(buttonOpacity, {
-            toValue: 1,
-            duration: 250,
-            useNativeDriver: true,
-        }).start();
-    }, [crew, buttonOpacity]);
+    }, [crew]);
 
     const selectCrewMember = async (member: CrewMember) => {
         LayoutAnimation.configureNext({
@@ -82,9 +90,9 @@ export default function CrewScreen() {
     };
 
     const getBackgroundSource = () => {
-        if (screenWidth < 640) {
+        if (dimensions.isMobile) {
             return require('../../assets/images/crew/background-crew-mobile.jpg');
-        } else if (screenWidth < 960) {
+        } else if (dimensions.isTablet) {
             return require('../../assets/images/crew/background-crew-tablet.jpg');
         } else {
             return require('../../assets/images/crew/background-crew-desktop.jpg');
@@ -95,33 +103,73 @@ export default function CrewScreen() {
         return crewImages[member.name as keyof typeof crewImages];
     };
 
-    const navigateToNext = () => {
-        router.push('/technology');
-    };
 
-    const isDesktop = screenWidth >= 960;
+    const styles = createStyles(dimensions);
 
     return (
-        <ImageBackground
-            source={getBackgroundSource()}
-            style={styles.bg}
-            resizeMode="cover"
-        >
-            <NavBar />
-            <ScrollView 
-                style={styles.container} 
-                contentContainerStyle={[styles.content, isDesktop && styles.desktopContent]}
-            >
-                <Text style={[styles.pageTitle, isDesktop && styles.desktopPageTitle]}>
-                    <Text style={styles.pageNumber}>02</Text>
-                    {'  '}MEET YOUR CREW
-                </Text>
+        <Animated.View style={{ flex: 1, minHeight: Dimensions.get('window').height, opacity: fadeAnim }} {...swipeHandler}>
+            <ScrollView>
+                <ImageBackground
+                    source={getBackgroundSource()}
+                    style={styles.bg}
+                    resizeMode="cover"
+                >
+                    <NavBar />
+                    <ScrollView
+                        style={styles.container}
+                        contentContainerStyle={[styles.content, dimensions.isDesktop && styles.desktopContent]}
+                    >
+                        <Text style={[styles.pageTitle, dimensions.isDesktop && styles.desktopPageTitle]}>
+                            <Text style={styles.pageNumber}>02</Text>
+                            {'  '}MEET YOUR CREW
+                        </Text>
 
-                {isDesktop ? (
-                    <View style={styles.desktopLayout}>
-                        <View style={styles.leftColumn}>
-                            {selectedCrew && (
+                        {dimensions.isDesktop ? (
+                            <View style={styles.desktopLayout}>
+                                <View style={styles.leftColumn}>
+                                    {selectedCrew && (
+                                        <>
+                                            <View style={styles.navigationContainer}>
+                                                {crew.map((member, index) => (
+                                                    <Pressable
+                                                        key={member.name}
+                                                        style={[
+                                                            styles.dot,
+                                                            selectedCrew?.name === member.name && styles.activeDot
+                                                        ]}
+                                                        onPress={() => selectCrewMember(member)}
+                                                    />
+                                                ))}
+                                            </View>
+
+                                            <View style={styles.infoContainer}>
+                                                <Text style={[styles.role, styles.desktopRole]}>{selectedCrew.role.toUpperCase()}</Text>
+                                                <Text style={[styles.crewName, styles.desktopCrewName]}>{selectedCrew.name.toUpperCase()}</Text>
+                                                <Text style={[styles.crewBio, styles.desktopCrewBio]}>{selectedCrew.bio}</Text>
+                                            </View>
+                                        </>
+                                    )}
+                                </View>
+
+                                <View style={styles.rightColumn}>
+                                    {selectedCrew && (
+                                        <Image
+                                            source={getCrewImage(selectedCrew)}
+                                            style={styles.desktopCrewImage}
+                                            resizeMode="contain"
+                                        />
+                                    )}
+                                </View>
+                            </View>
+                        ) : (
+                            selectedCrew ? (
                                 <>
+                                    <View style={styles.infoContainer}>
+                                        <Text style={styles.role}>{selectedCrew.role.toUpperCase()}</Text>
+                                        <Text style={styles.crewName}>{selectedCrew.name.toUpperCase()}</Text>
+                                        <Text style={styles.crewBio}>{selectedCrew.bio}</Text>
+                                    </View>
+
                                     <View style={styles.navigationContainer}>
                                         {crew.map((member, index) => (
                                             <Pressable
@@ -135,86 +183,44 @@ export default function CrewScreen() {
                                         ))}
                                     </View>
 
-                                    <View style={styles.infoContainer}>
-                                        <Text style={[styles.role, styles.desktopRole]}>{selectedCrew.role.toUpperCase()}</Text>
-                                        <Text style={[styles.crewName, styles.desktopCrewName]}>{selectedCrew.name.toUpperCase()}</Text>
-                                        <Text style={[styles.crewBio, styles.desktopCrewBio]}>{selectedCrew.bio}</Text>
+                                    <View style={styles.imageContainer}>
+                                        <Image
+                                            source={getCrewImage(selectedCrew)}
+                                            style={styles.crewImage}
+                                            resizeMode="contain"
+                                        />
                                     </View>
                                 </>
-                            )}
-                        </View>
-                        
-                        <View style={styles.rightColumn}>
-                            {selectedCrew && (
-                                <Image
-                                    source={getCrewImage(selectedCrew)}
-                                    style={styles.desktopCrewImage}
-                                    resizeMode="contain"
-                                />
-                            )}
-                        </View>
-                    </View>
-                ) : (
-                    selectedCrew ? (
-                        <>
-                            <View style={styles.infoContainer}>
-                                <Text style={styles.role}>{selectedCrew.role.toUpperCase()}</Text>
-                                <Text style={styles.crewName}>{selectedCrew.name.toUpperCase()}</Text>
-                                <Text style={styles.crewBio}>{selectedCrew.bio}</Text>
-                            </View>
+                            ) : (
+                                <Text style={styles.placeholder}>Loading crew...</Text>
+                            )
+                        )}
+                    </ScrollView>
 
-                            <View style={styles.navigationContainer}>
-                                {crew.map((member, index) => (
-                                    <Pressable
-                                        key={member.name}
-                                        style={[
-                                            styles.dot,
-                                            selectedCrew?.name === member.name && styles.activeDot
-                                        ]}
-                                        onPress={() => selectCrewMember(member)}
-                                    />
-                                ))}
-                            </View>
-
-                            <View style={styles.imageContainer}>
-                                <Image
-                                    source={getCrewImage(selectedCrew)}
-                                    style={styles.crewImage}
-                                    resizeMode="contain"
-                                />
-                            </View>
-                        </>
-                    ) : (
-                        <Text style={styles.placeholder}>Loading crew...</Text>
-                    )
-                )}
+                </ImageBackground>
             </ScrollView>
-
-            <Animated.View style={[styles.navigationButton, { opacity: buttonOpacity }]}>
-                <Pressable style={styles.navButton} onPress={navigateToNext}>
-                    <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
-                </Pressable>
-            </Animated.View>
-        </ImageBackground>
+        </Animated.View>
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (dimensions) => StyleSheet.create({
     bg: {
         flex: 1,
-        backgroundColor: '#0B0D17'
+        backgroundColor: '#0B0D17',
+        minHeight: dimensions.screenHeight
     },
     container: {
         flex: 1,
-        paddingTop: 96
+        paddingTop: dimensions.paddingVertical * 3
     },
     content: {
         flexGrow: 1,
-        paddingHorizontal: 24
+        paddingHorizontal: dimensions.paddingHorizontal
     },
     desktopContent: {
-        paddingHorizontal: 80,
-        paddingTop: 200,
+        paddingHorizontal: dimensions.desktopPaddingHorizontal,
+        paddingTop: dimensions.desktopPaddingTop,
+        paddingRight: dimensions.screenWidth * 0.08,
         alignItems: 'stretch'
     },
     desktopLayout: {
@@ -222,7 +228,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         justifyContent: 'space-between',
         width: '100%',
-        gap: 80
+        gap: dimensions.largeGap
     },
     leftColumn: {
         flex: 1,
@@ -230,79 +236,80 @@ const styles = StyleSheet.create({
     },
     rightColumn: {
         flex: 1,
-        alignItems: 'center',
+        alignItems: 'flex-end',
         justifyContent: 'flex-end'
     },
     desktopPageTitle: {
         alignSelf: 'flex-start',
-        marginBottom: 60
+        marginBottom: dimensions.mediumGap
     },
     desktopRole: {
-        fontSize: 32,
+        fontSize: dimensions.titleFontSize * 0.8,
         textAlign: 'left'
     },
     desktopCrewName: {
-        fontSize: 56,
+        fontSize: dimensions.titleFontSize * 1.4,
         textAlign: 'left'
     },
     desktopCrewBio: {
         textAlign: 'left',
-        maxWidth: 444
+        maxWidth: dimensions.screenWidth * 0.35
     },
     desktopCrewImage: {
-        width: 400,
-        height: 600,
+        width: dimensions.imageWidth,
+        height: dimensions.imageMaxHeight,
         marginBottom: 0
     },
     pageTitle: {
         fontFamily: 'BarlowCondensed_400Regular',
-        fontSize: 16,
+        fontSize: dimensions.bodyFontSize * 0.8,
         letterSpacing: 2.7,
         color: '#FFFFFF',
-        marginBottom: 40,
+        marginTop: dimensions.paddingVertical,
+        marginBottom: dimensions.smallGap,
         textAlign: 'center'
     },
     pageNumber: {
-        fontWeight: '700',
-        opacity: 0.25
+        fontWeight: 'bold',
+        opacity: 0.5
     },
     infoContainer: {
         alignItems: 'center',
-        paddingHorizontal: 24,
-        marginBottom: 40
+        paddingHorizontal: dimensions.paddingHorizontal,
+        marginBottom: dimensions.smallGap
     },
     role: {
         fontFamily: 'Bellefair_400Regular',
-        fontSize: 18,
+        fontSize: dimensions.bodyFontSize * 0.7,
         color: 'rgba(255, 255, 255, 0.5)',
         marginBottom: 8,
         textAlign: 'center'
     },
     crewName: {
         fontFamily: 'Bellefair_400Regular',
-        fontSize: 24,
+        fontSize: dimensions.titleFontSize * 0.6,
         color: '#FFFFFF',
         marginBottom: 16,
         textAlign: 'center'
     },
     crewBio: {
         fontFamily: 'Barlow_400Regular',
-        fontSize: 16,
+        fontSize: dimensions.bodyFontSize * 0.6,
         lineHeight: 30,
         color: '#D0D6F9',
         textAlign: 'center',
-        maxWidth: 400
+        maxWidth: dimensions.containerMaxWidth * 0.8
     },
     navigationContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        gap: 16,
-        marginBottom: 32
+        gap: dimensions.smallGap * 0.4,
+        marginBottom: dimensions.smallGap * 0.8
     },
     dot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
+        width: dimensions.dotSize * 0.7,
+        height: dimensions.dotSize * 0.7,
+        borderRadius: dimensions.dotSize * 0.35,
         backgroundColor: 'rgba(255, 255, 255, 0.17)'
     },
     activeDot: {
@@ -312,34 +319,18 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'flex-end',
-        minHeight: 300
+        minHeight: dimensions.mobileImageHeight * 0.6
     },
     crewImage: {
-        width: 300,
-        height: 400,
-        maxHeight: '100%'
+        width: dimensions.mobileImageWidth * 0.75,
+        height: dimensions.mobileImageHeight,
+        maxHeight: dimensions.imageMaxHeight
     },
     placeholder: {
         fontFamily: 'Barlow_400Regular',
-        fontSize: 16,
+        fontSize: dimensions.bodyFontSize * 0.6,
         color: '#D0D6F9',
         textAlign: 'center',
-        marginTop: 40
-    },
-    navigationButton: {
-        position: 'absolute',
-        bottom: 50,
-        right: 24,
-        zIndex: 10,
-    },
-    navButton: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.25)',
-        alignItems: 'center',
-        justifyContent: 'center',
+        marginTop: dimensions.smallGap
     },
 });

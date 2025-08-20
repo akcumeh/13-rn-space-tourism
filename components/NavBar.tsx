@@ -163,8 +163,8 @@ const styles = StyleSheet.create({
     wrap: {
         position: 'absolute',
         top: 0.025*screenWidth,
-        width: '50%',
-        right: 0,
+        width: '100%',
+        left: 0,
         paddingHorizontal: 24,
         paddingTop: 48,
         height: 96,
@@ -223,8 +223,8 @@ const styles = StyleSheet.create({
         opacity: 1
     },
     menuNumber: {
-        fontWeight: '700',
-        opacity: 0.25,
+        fontWeight: 'bold',
+        opacity: 0.5,
     },
 
     // Desktop Styles
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         height: 96,
-        paddingLeft: 55,
+        paddingLeft: 75,
         paddingTop: 40,
         flexDirection: 'row',
         alignItems: 'center',
@@ -244,14 +244,16 @@ const styles = StyleSheet.create({
         flex: 1,
         height: 1,
         backgroundColor: 'rgba(255, 255, 255, 0.25)',
-        marginHorizontal: 55
+        marginLeft: 55,
+        width: 0.5 * screenWidth,
+        zIndex: 150
     },
     desktopMenu: {
         flexDirection: 'row',
         backgroundColor: 'rgba(255, 255, 255, 0.04)',
         backdropFilter: 'blur(40px)',
-        paddingLeft: 48,
-        paddingRight: 165,
+        paddingLeft: 126,
+        paddingRight: 25,
         height: 96,
         alignItems: 'center'
     },
@@ -269,6 +271,6 @@ const styles = StyleSheet.create({
     },
     desktopMenuNumber: {
         fontWeight: '700',
-        opacity: 1
+        opacity: 0.5,
     }
 });
