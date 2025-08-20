@@ -156,12 +156,14 @@ export default function NavBar() {
     );
 }
 
+const screenWidth = Dimensions.get('window').width;
+
 const styles = StyleSheet.create({
     // Mobile Styles
     wrap: {
         position: 'absolute',
-        top: 0,
-        left: 0,
+        top: 0.025*screenWidth,
+        width: '50%',
         right: 0,
         paddingHorizontal: 24,
         paddingTop: 48,
@@ -179,7 +181,8 @@ const styles = StyleSheet.create({
     line: {
         height: 2,
         backgroundColor: '#D0D6F9',
-        width: '100%'
+        width: '100%',
+        zIndex: 3
     },
     closeIcon: {
         color: '#D0D6F9',
@@ -197,7 +200,7 @@ const styles = StyleSheet.create({
     },
     menu: {
         width: 254,
-        backgroundColor: 'rgba(11, 13, 23, 0.95)',
+        backgroundColor: 'rgba(11, 13, 23, 0.15)',
         backdropFilter: 'blur(40px)',
         paddingTop: 118,
     },
@@ -231,13 +234,11 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         height: 96,
-        paddingHorizontal: 55,
+        paddingLeft: 55,
         paddingTop: 40,
         flexDirection: 'row',
         alignItems: 'center',
-        zIndex: 100,
-        backgroundColor: 'rgba(255, 255, 255, 0.04)',
-        backdropFilter: 'blur(40px)'
+        zIndex: 100
     },
     desktopLine: {
         flex: 1,
@@ -247,10 +248,15 @@ const styles = StyleSheet.create({
     },
     desktopMenu: {
         flexDirection: 'row',
+        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+        backdropFilter: 'blur(40px)',
+        paddingLeft: 48,
+        paddingRight: 165,
         height: 96,
+        alignItems: 'center'
     },
     desktopMenuItem: {
-        paddingVertical: 25,
+        paddingVertical: 38,
         marginHorizontal: 24,
         borderBottomWidth: 3,
         borderBottomColor: 'transparent'

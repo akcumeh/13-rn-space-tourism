@@ -106,6 +106,8 @@ export default function TechnologyScreen() {
         router.push('/home');
     };
 
+    const isDesktop = screenWidth >= 960;
+
     return (
         <ImageBackground
             source={getBackgroundSource()}
@@ -113,48 +115,97 @@ export default function TechnologyScreen() {
             resizeMode="cover"
         >
             <NavBar />
-            <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-                <Text style={styles.pageTitle}>
+            <ScrollView 
+                style={styles.container} 
+                contentContainerStyle={[styles.content, isDesktop && styles.desktopContent]}
+            >
+                <Text style={[styles.pageTitle, isDesktop && styles.desktopPageTitle]}>
                     <Text style={styles.pageNumber}>03</Text>
                     {'     '}SPACE LAUNCH 101
                 </Text>
 
-                <View style={styles.navigationContainer}>
-                    {technologies.map((technology, index) => (
-                        <Pressable
-                            key={technology.name}
-                            style={[
-                                styles.navNumber,
-                                selectedTechnology?.name === technology.name && styles.navNumberActive
-                            ]}
-                            onPress={() => selectTechnology(technology)}
-                        >
-                            <Text style={[
-                                styles.navNumberText,
-                                selectedTechnology?.name === technology.name && styles.navNumberTextActive
-                            ]}>
-                                {index + 1}
-                            </Text>
-                        </Pressable>
-                    ))}
-                </View>
+                {isDesktop ? (
+                    <View style={styles.desktopLayout}>
+                        <View style={styles.leftColumn}>
+                            <View style={styles.navigationContainer}>
+                                {technologies.map((technology, index) => (
+                                    <Pressable
+                                        key={technology.name}
+                                        style={[
+                                            styles.navNumber,
+                                            selectedTechnology?.name === technology.name && styles.navNumberActive
+                                        ]}
+                                        onPress={() => selectTechnology(technology)}
+                                    >
+                                        <Text style={[
+                                            styles.navNumberText,
+                                            selectedTechnology?.name === technology.name && styles.navNumberTextActive
+                                        ]}>
+                                            {index + 1}
+                                        </Text>
+                                    </Pressable>
+                                ))}
+                            </View>
 
-                {selectedTechnology ? (
-                    <>
-                        <Image
-                            source={getTechnologyImage(selectedTechnology)}
-                            style={styles.technologyImage}
-                            resizeMode="contain"
-                        />
-
-                        <View style={styles.infoContainer}>
-                            <Text style={styles.terminology}>THE TERMINOLOGY...</Text>
-                            <Text style={styles.technologyName}>{selectedTechnology.name.toUpperCase()}</Text>
-                            <Text style={styles.technologyDescription}>{selectedTechnology.description}</Text>
+                            {selectedTechnology && (
+                                <View style={styles.infoContainer}>
+                                    <Text style={[styles.terminology, styles.desktopTerminology]}>THE TERMINOLOGY...</Text>
+                                    <Text style={[styles.technologyName, styles.desktopTechnologyName]}>{selectedTechnology.name.toUpperCase()}</Text>
+                                    <Text style={[styles.technologyDescription, styles.desktopDescription]}>{selectedTechnology.description}</Text>
+                                </View>
+                            )}
                         </View>
-                    </>
+                        
+                        <View style={styles.rightColumn}>
+                            {selectedTechnology && (
+                                <Image
+                                    source={getTechnologyImage(selectedTechnology)}
+                                    style={styles.desktopTechnologyImage}
+                                    resizeMode="contain"
+                                />
+                            )}
+                        </View>
+                    </View>
                 ) : (
-                    <Text style={styles.placeholder}>Loading technology...</Text>
+                    <>
+                        <View style={styles.navigationContainer}>
+                            {technologies.map((technology, index) => (
+                                <Pressable
+                                    key={technology.name}
+                                    style={[
+                                        styles.navNumber,
+                                        selectedTechnology?.name === technology.name && styles.navNumberActive
+                                    ]}
+                                    onPress={() => selectTechnology(technology)}
+                                >
+                                    <Text style={[
+                                        styles.navNumberText,
+                                        selectedTechnology?.name === technology.name && styles.navNumberTextActive
+                                    ]}>
+                                        {index + 1}
+                                    </Text>
+                                </Pressable>
+                            ))}
+                        </View>
+
+                        {selectedTechnology ? (
+                            <>
+                                <Image
+                                    source={getTechnologyImage(selectedTechnology)}
+                                    style={styles.technologyImage}
+                                    resizeMode="contain"
+                                />
+
+                                <View style={styles.infoContainer}>
+                                    <Text style={styles.terminology}>THE TERMINOLOGY...</Text>
+                                    <Text style={styles.technologyName}>{selectedTechnology.name.toUpperCase()}</Text>
+                                    <Text style={styles.technologyDescription}>{selectedTechnology.description}</Text>
+                                </View>
+                            </>
+                        ) : (
+                            <Text style={styles.placeholder}>Loading technology...</Text>
+                        )}
+                    </>
                 )}
             </ScrollView>
 
@@ -180,6 +231,47 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 24,
         paddingBottom: 50
+    },
+    desktopContent: {
+        paddingHorizontal: 80,
+        paddingTop: 200,
+        alignItems: 'stretch'
+    },
+    desktopLayout: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        width: '100%',
+        gap: 80
+    },
+    leftColumn: {
+        flex: 1,
+        alignItems: 'flex-start'
+    },
+    rightColumn: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    desktopPageTitle: {
+        alignSelf: 'flex-start',
+        marginBottom: 60
+    },
+    desktopTerminology: {
+        textAlign: 'left'
+    },
+    desktopTechnologyName: {
+        fontSize: 56,
+        textAlign: 'left'
+    },
+    desktopDescription: {
+        textAlign: 'left',
+        maxWidth: 444
+    },
+    desktopTechnologyImage: {
+        width: 400,
+        height: 500,
+        marginBottom: 0
     },
     pageTitle: {
         fontFamily: 'BarlowCondensed_400Regular',

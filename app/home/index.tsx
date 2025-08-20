@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Dimensions, ImageBackground, Pressable, StyleSheet, Text, View, ScrollView } from 'react-native';
+import { Dimensions, ImageBackground, Pressable, StyleSheet, Text, View, ScrollView, Animated } from 'react-native';
 import { router } from 'expo-router';
 import NavBar from '../../components/NavBar';
 
 export default function HomeScreen() {
     const [isPressed, setIsPressed] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
     const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
+    const scaleAnim = useState(new Animated.Value(1))[0];
+    const ringAnim = useState(new Animated.Value(0))[0];
 
     useEffect(() => {
         const subscription = Dimensions.addEventListener('change', ({ window }) => {
@@ -13,6 +16,58 @@ export default function HomeScreen() {
         });
         return () => subscription?.remove();
     }, []);
+
+    const handlePressIn = () => {
+        setIsPressed(true);
+        Animated.parallel([
+            Animated.spring(scaleAnim, {
+                toValue: 0.95,
+                useNativeDriver: true,
+            }),
+            Animated.timing(ringAnim, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true,
+            })
+        ]).start();
+    };
+
+    const handlePressOut = () => {
+        setIsPressed(false);
+        Animated.parallel([
+            Animated.spring(scaleAnim, {
+                toValue: 1,
+                useNativeDriver: true,
+            }),
+            Animated.timing(ringAnim, {
+                toValue: isHovered ? 0.7 : 0,
+                duration: 200,
+                useNativeDriver: true,
+            })
+        ]).start();
+    };
+
+    const handleHoverIn = () => {
+        if (screenWidth >= 960) { // Only on desktop
+            setIsHovered(true);
+            Animated.timing(ringAnim, {
+                toValue: 0.7,
+                duration: 300,
+                useNativeDriver: true,
+            }).start();
+        }
+    };
+
+    const handleHoverOut = () => {
+        if (screenWidth >= 960) { // Only on desktop
+            setIsHovered(false);
+            Animated.timing(ringAnim, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start();
+        }
+    };
 
     const getBackgroundSource = () => {
         if (screenWidth < 640) {
@@ -39,32 +94,119 @@ export default function HomeScreen() {
                     contentContainerStyle={[styles.content, isDesktop && styles.desktopContent]}
                     showsVerticalScrollIndicator={false}
                 >
-                    <Text style={styles.pageTitle}>
-                        <Text style={styles.pageNumber}>00</Text>
-                        {'  '}HOME
-                    </Text>
-                    <Text style={styles.h3}>SO, YOU WANT TO TRAVEL TO</Text>
-                    <Text style={styles.h1}>SPACE</Text>
-                    <Text style={styles.p}>
-                        Let&apos;s face it; if you want to go to space, you might as well genuinely go to
-                        outer space and not hover kind of on the edge of it. Well sit back, and relax
-                        because we&apos;ll give you a truly out of this world experience!
-                    </Text>
-                    <Pressable
-                        style={[styles.explore, isPressed && styles.exploreHover]}
-                        onPress={() => router.push('/destination')}
-                        onPressIn={() => setIsPressed(true)}
-                        onPressOut={() => setIsPressed(false)}
-                    >
-                        <Text style={[styles.exploreText, isPressed && styles.exploreTextHover]}>
-                            EXPLORE
+                    {!isDesktop && (
+                        <Text style={styles.pageTitle}>
+                            <Text style={styles.pageNumber}>00</Text>
+                            {'  '}HOME
                         </Text>
-                    </Pressable>
+                    )}
+                    
+                    {isDesktop ? (
+                        <View style={styles.desktopLayout}>
+                            <View style={styles.leftColumn}>
+                                <Text style={styles.h3}>SO, YOU WANT TO TRAVEL TO</Text>
+                                <Text style={styles.h1}>SPACE</Text>
+                                <Text style={styles.p}>
+                                    Let&apos;s face it; if you want to go to space, you might as well genuinely go to
+                                    outer space and not hover kind of on the edge of it. Well sit back, and relax
+                                    because we&apos;ll give you a truly out of this world experience!
+                                </Text>
+                            </View>
+                            <View style={styles.rightColumn}>
+                                <View style={styles.exploreContainer}>
+                                    <Animated.View 
+                                        style={[
+                                            styles.exploreRing,
+                                            {
+                                                opacity: ringAnim,
+                                                transform: [{
+                                                    scale: ringAnim.interpolate({
+                                                        inputRange: [0, 1],
+                                                        outputRange: [1, 1.5]
+                                                    })
+                                                }]
+                                            }
+                                        ]}
+                                    />
+                                    <Animated.View
+                                        style={[
+                                            styles.explore,
+                                            {
+                                                transform: [{ scale: scaleAnim }]
+                                            }
+                                        ]}
+                                    >
+                                        <Pressable
+                                            style={styles.exploreButton}
+                                            onPress={() => router.push('/destination')}
+                                            onPressIn={handlePressIn}
+                                            onPressOut={handlePressOut}
+                                            onHoverIn={handleHoverIn}
+                                            onHoverOut={handleHoverOut}
+                                        >
+                                            <Text style={styles.exploreText}>
+                                                EXPLORE
+                                            </Text>
+                                        </Pressable>
+                                    </Animated.View>
+                                </View>
+                            </View>
+                        </View>
+                    ) : (
+                        <>
+                            <Text style={styles.h3}>SO, YOU WANT TO TRAVEL TO</Text>
+                            <Text style={styles.h1}>SPACE</Text>
+                            <Text style={styles.p}>
+                                Let&apos;s face it; if you want to go to space, you might as well genuinely go to
+                                outer space and not hover kind of on the edge of it. Well sit back, and relax
+                                because we&apos;ll give you a truly out of this world experience!
+                            </Text>
+                            <View style={styles.exploreContainer}>
+                                <Animated.View 
+                                    style={[
+                                        styles.exploreRing,
+                                        {
+                                            opacity: ringAnim,
+                                            transform: [{
+                                                scale: ringAnim.interpolate({
+                                                    inputRange: [0, 1],
+                                                    outputRange: [1, 1.5]
+                                                })
+                                            }]
+                                        }
+                                    ]}
+                                />
+                                <Animated.View
+                                    style={[
+                                        styles.explore,
+                                        {
+                                            transform: [{ scale: scaleAnim }]
+                                        }
+                                    ]}
+                                >
+                                    <Pressable
+                                        style={styles.exploreButton}
+                                        onPress={() => router.push('/destination')}
+                                        onPressIn={handlePressIn}
+                                        onPressOut={handlePressOut}
+                                        onHoverIn={handleHoverIn}
+                                        onHoverOut={handleHoverOut}
+                                    >
+                                        <Text style={styles.exploreText}>
+                                            EXPLORE
+                                        </Text>
+                                    </Pressable>
+                                </Animated.View>
+                            </View>
+                        </>
+                    )}
                 </ScrollView>
             </ImageBackground>
         </View>
     );
 }
+
+const screenWidth = Dimensions.get('window').width;
 
 const styles = StyleSheet.create({
     container: {
@@ -79,8 +221,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#0B0D17'
     },
     desktopBg: {
-        width: 960,
-        maxWidth: '100%'
+        width: screenWidth,
     },
     scrollContainer: {
         flex: 1,
@@ -93,7 +234,27 @@ const styles = StyleSheet.create({
         paddingBottom: 50
     },
     desktopContent: {
-        paddingHorizontal: 24
+        paddingHorizontal: 80,
+        paddingTop: 200,
+        alignItems: 'stretch'
+    },
+    desktopLayout: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        width: '100%',
+        minHeight: 500
+    },
+    leftColumn: {
+        flex: 1,
+        alignItems: 'flex-start',
+        paddingRight: 40,
+        paddingBottom: 50
+    },
+    rightColumn: {
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        paddingBottom: 50
     },
     pageTitle: {
         fontFamily: 'BarlowCondensed_400Regular',
@@ -130,29 +291,35 @@ const styles = StyleSheet.create({
         marginBottom: 40,
         fontFamily: 'Barlow_400Regular'
     },
+    exploreContainer: {
+        position: 'relative',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    exploreRing: {
+        position: 'absolute',
+        width: 274,
+        height: 274,
+        borderRadius: 137,
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    },
     explore: {
         width: 274,
         height: 274,
         borderRadius: 137,
         backgroundColor: '#FFFFFF',
-        alignItems: 'center',
-        justifyContent: 'center'
     },
-    exploreHover: {
-        backgroundColor: '#FFFFFF',
-        shadowColor: '#FFFFFF',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.3,
-        shadowRadius: 80,
-        elevation: 20
+    exploreButton: {
+        width: '100%',
+        height: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 137,
     },
     exploreText: {
         fontSize: 32,
         fontFamily: 'Bellefair_400Regular',
         letterSpacing: 2,
         color: '#0B0D17'
-    },
-    exploreTextHover: {
-        color: 'rgba(11, 13, 23, 0.5)'
     }
 });

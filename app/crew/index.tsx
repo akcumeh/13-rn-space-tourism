@@ -99,6 +99,8 @@ export default function CrewScreen() {
         router.push('/technology');
     };
 
+    const isDesktop = screenWidth >= 960;
+
     return (
         <ImageBackground
             source={getBackgroundSource()}
@@ -106,43 +108,85 @@ export default function CrewScreen() {
             resizeMode="cover"
         >
             <NavBar />
-            <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-                <Text style={styles.pageTitle}>
+            <ScrollView 
+                style={styles.container} 
+                contentContainerStyle={[styles.content, isDesktop && styles.desktopContent]}
+            >
+                <Text style={[styles.pageTitle, isDesktop && styles.desktopPageTitle]}>
                     <Text style={styles.pageNumber}>02</Text>
                     {'  '}MEET YOUR CREW
                 </Text>
 
-                {selectedCrew ? (
-                    <>
-                        <View style={styles.infoContainer}>
-                            <Text style={styles.role}>{selectedCrew.role.toUpperCase()}</Text>
-                            <Text style={styles.crewName}>{selectedCrew.name.toUpperCase()}</Text>
-                            <Text style={styles.crewBio}>{selectedCrew.bio}</Text>
-                        </View>
+                {isDesktop ? (
+                    <View style={styles.desktopLayout}>
+                        <View style={styles.leftColumn}>
+                            {selectedCrew && (
+                                <>
+                                    <View style={styles.navigationContainer}>
+                                        {crew.map((member, index) => (
+                                            <Pressable
+                                                key={member.name}
+                                                style={[
+                                                    styles.dot,
+                                                    selectedCrew?.name === member.name && styles.activeDot
+                                                ]}
+                                                onPress={() => selectCrewMember(member)}
+                                            />
+                                        ))}
+                                    </View>
 
-                        <View style={styles.navigationContainer}>
-                            {crew.map((member, index) => (
-                                <Pressable
-                                    key={member.name}
-                                    style={[
-                                        styles.dot,
-                                        selectedCrew?.name === member.name && styles.activeDot
-                                    ]}
-                                    onPress={() => selectCrewMember(member)}
+                                    <View style={styles.infoContainer}>
+                                        <Text style={[styles.role, styles.desktopRole]}>{selectedCrew.role.toUpperCase()}</Text>
+                                        <Text style={[styles.crewName, styles.desktopCrewName]}>{selectedCrew.name.toUpperCase()}</Text>
+                                        <Text style={[styles.crewBio, styles.desktopCrewBio]}>{selectedCrew.bio}</Text>
+                                    </View>
+                                </>
+                            )}
+                        </View>
+                        
+                        <View style={styles.rightColumn}>
+                            {selectedCrew && (
+                                <Image
+                                    source={getCrewImage(selectedCrew)}
+                                    style={styles.desktopCrewImage}
+                                    resizeMode="contain"
                                 />
-                            ))}
+                            )}
                         </View>
-
-                        <View style={styles.imageContainer}>
-                            <Image
-                                source={getCrewImage(selectedCrew)}
-                                style={styles.crewImage}
-                                resizeMode="contain"
-                            />
-                        </View>
-                    </>
+                    </View>
                 ) : (
-                    <Text style={styles.placeholder}>Loading crew...</Text>
+                    selectedCrew ? (
+                        <>
+                            <View style={styles.infoContainer}>
+                                <Text style={styles.role}>{selectedCrew.role.toUpperCase()}</Text>
+                                <Text style={styles.crewName}>{selectedCrew.name.toUpperCase()}</Text>
+                                <Text style={styles.crewBio}>{selectedCrew.bio}</Text>
+                            </View>
+
+                            <View style={styles.navigationContainer}>
+                                {crew.map((member, index) => (
+                                    <Pressable
+                                        key={member.name}
+                                        style={[
+                                            styles.dot,
+                                            selectedCrew?.name === member.name && styles.activeDot
+                                        ]}
+                                        onPress={() => selectCrewMember(member)}
+                                    />
+                                ))}
+                            </View>
+
+                            <View style={styles.imageContainer}>
+                                <Image
+                                    source={getCrewImage(selectedCrew)}
+                                    style={styles.crewImage}
+                                    resizeMode="contain"
+                                />
+                            </View>
+                        </>
+                    ) : (
+                        <Text style={styles.placeholder}>Loading crew...</Text>
+                    )
                 )}
             </ScrollView>
 
@@ -167,6 +211,48 @@ const styles = StyleSheet.create({
     content: {
         flexGrow: 1,
         paddingHorizontal: 24
+    },
+    desktopContent: {
+        paddingHorizontal: 80,
+        paddingTop: 200,
+        alignItems: 'stretch'
+    },
+    desktopLayout: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        width: '100%',
+        gap: 80
+    },
+    leftColumn: {
+        flex: 1,
+        alignItems: 'flex-start'
+    },
+    rightColumn: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'flex-end'
+    },
+    desktopPageTitle: {
+        alignSelf: 'flex-start',
+        marginBottom: 60
+    },
+    desktopRole: {
+        fontSize: 32,
+        textAlign: 'left'
+    },
+    desktopCrewName: {
+        fontSize: 56,
+        textAlign: 'left'
+    },
+    desktopCrewBio: {
+        textAlign: 'left',
+        maxWidth: 444
+    },
+    desktopCrewImage: {
+        width: 400,
+        height: 600,
+        marginBottom: 0
     },
     pageTitle: {
         fontFamily: 'BarlowCondensed_400Regular',
