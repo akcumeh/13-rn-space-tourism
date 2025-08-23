@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
         width: '100%',
         left: 0,
         paddingHorizontal: 24,
-        paddingTop: 48,
+        paddingTop: 36,
         height: 96,
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
         opacity: 1
     },
     menuNumber: {
-        fontWeight: 'bold',
+        fontWeight: '700',
         opacity: 0.5,
     },
 

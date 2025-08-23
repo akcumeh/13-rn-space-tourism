@@ -26,7 +26,8 @@
       "shortName": "Space Tourism",
       "description": "Explore the cosmos with our space tourism experience",
       "themeColor": "#0B0D17",
-      "backgroundColor": "#0B0D17"
+      "backgroundColor": "#0B0D17",
+      "viewport": "width=device-width, initial-scale=1, viewport-fit=cover"
     },
     "plugins": [
       "expo-router",

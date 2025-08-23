@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View, LayoutAnimation, Dimensions, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
-import useSwipe from '@/hooks/useSwipe';
-import useDimensions from '@/hooks/useDimensions';
+import useSwipe from '../../hooks/useSwipe';
 import NavBar from '../../components/NavBar';
 import destinationData from '../../assets/data.json';
 
@@ -27,20 +25,33 @@ const destinationImages = {
 
 export default function DestinationScreen() {
     const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
-    const dimensions = useDimensions();
-    const fadeAnim = useState(new Animated.Value(0))[0];
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+    const slideAnim = useState(new Animated.Value(50))[0];
+    const scaleAnim = useState(new Animated.Value(0.95))[0];
     const swipeHandler = useSwipe('destination');
+    
+    const isTablet = screenWidth >= 768 && screenWidth < 1024;
+    const isDesktop = screenWidth >= 1024;
+    const isMobile = screenWidth < 768;
 
     const destinations = destinationData.destinations;
 
     useEffect(() => {
-        // Page fade-in animation
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-        }).start();
-    }, [fadeAnim]);
+        // Page slide-in animation
+        Animated.parallel([
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 400,
+                useNativeDriver: true,
+            }),
+            Animated.timing(scaleAnim, {
+                toValue: 1,
+                duration: 400,
+                useNativeDriver: true,
+            })
+        ]).start();
+    }, [slideAnim, scaleAnim]);
 
     useEffect(() => {
         const loadLastDestination = async () => {
@@ -78,9 +89,9 @@ export default function DestinationScreen() {
     };
 
     const getBackgroundSource = () => {
-        if (dimensions.isMobile) {
+        if (isMobile) {
             return require('../../assets/images/destination/background-destination-mobile.jpg');
-        } else if (dimensions.isTablet) {
+        } else if (isTablet) {
             return require('../../assets/images/destination/background-destination-tablet.jpg');
         } else {
             return require('../../assets/images/destination/background-destination-desktop.jpg');
@@ -88,41 +99,112 @@ export default function DestinationScreen() {
     };
 
 
-    const styles = createStyles(dimensions);
 
     return (
-        <Animated.View style={{ flex: 1, opacity: fadeAnim }} {...swipeHandler}>
-            <ScrollView>
-                <ImageBackground
-                    source={getBackgroundSource()}
-                    style={styles.bg}
-                    resizeMode="cover"
-                >
+        <View style={{ flex: 1 }} {...swipeHandler}>
+            <ImageBackground
+                source={getBackgroundSource()}
+                style={styles.bg}
+                resizeMode="cover"
+            >
+                <ScrollView contentContainerStyle={{ minHeight: screenHeight }}>
                     <NavBar />
-                    <ScrollView
-                        style={styles.container}
-                        contentContainerStyle={[styles.content, dimensions.isDesktop && styles.desktopContent]}
+                    <Animated.ScrollView
+                        style={[
+                            styles.container, 
+                            { 
+                                transform: [
+                                    { translateY: slideAnim },
+                                    { scale: scaleAnim }
+                                ] 
+                            }
+                        ]}
+                        contentContainerStyle={[styles.content, isDesktop && styles.desktopContent]}
                     >
-                        <Text style={[styles.pageTitle, dimensions.isDesktop && styles.desktopPageTitle]}>
-                            <Text style={styles.pageNumber}>01</Text>
-                            {'  '}PICK YOUR DESTINATION
-                        </Text>
-
                         {isDesktop ? (
-                            <View style={styles.desktopLayout}>
-                                <View style={styles.leftColumn}>
+                            <Text style={styles.desktopPageTitle}>
+                                <Text style={styles.pageNumber}>01</Text>
+                                {'  '}PICK YOUR DESTINATION
+                            </Text>
+                        ) : (
+                            <Text style={styles.pageTitle}>
+                                <Text style={styles.pageNumber}>01</Text>
+                                {'  '}PICK YOUR DESTINATION
+                            </Text>
+                        )}
+
+                        <View style={[styles.pageContentWrapper, isDesktop && styles.desktopPageContentWrapper]}>
+                            {isDesktop ? (
+                                <View style={styles.desktopLayout}>
+                                    <View style={styles.leftColumn}>
+                                        {selectedDestination ? (
+                                            <Image
+                                                source={destinationImages[selectedDestination.name as keyof typeof destinationImages]}
+                                                style={styles.desktopPlanetImage}
+                                                resizeMode="contain"
+                                            />
+                                        ) : (
+                                            <View style={styles.planetPlaceholder} />
+                                        )}
+                                    </View>
+
+                                    <View style={styles.rightColumn}>
+                                        <View style={[styles.contentContainer, styles.desktopContentContainer]}>
+                                            <View style={[styles.tabContainer, styles.desktopTabContainer]}>
+                                                {destinations.map((destination) => (
+                                                    <Pressable
+                                                        key={destination.name}
+                                                        style={[
+                                                            styles.tab,
+                                                            styles.desktopTab,
+                                                            selectedDestination?.name === destination.name && styles.tabActive
+                                                        ]}
+                                                        onPress={() => selectDestination(destination)}
+                                                    >
+                                                        <Text style={[
+                                                            styles.tabText,
+                                                            selectedDestination?.name === destination.name && styles.tabTextActive
+                                                        ]}>
+                                                            {destination.name.toUpperCase()}
+                                                        </Text>
+                                                    </Pressable>
+                                                ))}
+                                            </View>
+
+                                            {selectedDestination ? (
+                                                <View style={[styles.infoContainer, styles.desktopInfoContainer]}>
+                                                    <Text style={[styles.planetName, styles.desktopPlanetName]}>{selectedDestination.name.toUpperCase()}</Text>
+                                                    <Text style={[styles.planetDescription, styles.desktopDescription]}>{selectedDestination.description}</Text>
+                                                    <View style={styles.divider} />
+                                                    <View style={[styles.statsContainer, isDesktop && styles.desktopStatsContainer]}>
+                                                        <View style={[styles.stat, isDesktop && styles.desktopStat]}>
+                                                            <Text style={styles.statLabel}>AVG. DISTANCE</Text>
+                                                            <Text style={styles.statValue}>{selectedDestination.distance.toUpperCase()}</Text>
+                                                        </View>
+                                                        <View style={[styles.stat, isDesktop && styles.desktopStat]}>
+                                                            <Text style={styles.statLabel}>EST. TRAVEL TIME</Text>
+                                                            <Text style={styles.statValue}>{selectedDestination.travel.toUpperCase()}</Text>
+                                                        </View>
+                                                    </View>
+                                                </View>
+                                            ) : (
+                                                <Text style={styles.placeholder}>Choose a planet to learn more</Text>
+                                            )}
+                                        </View>
+                                    </View>
+                                </View>
+                            ) : (
+                                <View style={styles.contentContainer}>
                                     {selectedDestination ? (
                                         <Image
                                             source={destinationImages[selectedDestination.name as keyof typeof destinationImages]}
-                                            style={styles.desktopPlanetImage}
+                                            style={styles.planetImage}
                                             resizeMode="contain"
                                         />
                                     ) : (
                                         <View style={styles.planetPlaceholder} />
                                     )}
-                                </View>
 
-                                <View style={styles.rightColumn}>
                                     <View style={styles.tabContainer}>
                                         {destinations.map((destination) => (
                                             <Pressable
@@ -145,15 +227,15 @@ export default function DestinationScreen() {
 
                                     {selectedDestination ? (
                                         <View style={styles.infoContainer}>
-                                            <Text style={[styles.planetName, styles.desktopPlanetName]}>{selectedDestination.name.toUpperCase()}</Text>
-                                            <Text style={[styles.planetDescription, styles.desktopDescription]}>{selectedDestination.description}</Text>
+                                            <Text style={styles.planetName}>{selectedDestination.name.toUpperCase()}</Text>
+                                            <Text style={styles.planetDescription}>{selectedDestination.description}</Text>
                                             <View style={styles.divider} />
-                                            <View style={[styles.statsContainer, dimensions.dimensions.isDesktop && styles.desktopStatsContainer]}>
-                                                <View style={[styles.stat, dimensions.isDesktop && styles.desktopStat]}>
+                                            <View style={[styles.statsContainer, isTablet && styles.tabletStatsContainer]}>
+                                                <View style={[styles.stat, isDesktop && styles.desktopStat]}>
                                                     <Text style={styles.statLabel}>AVG. DISTANCE</Text>
                                                     <Text style={styles.statValue}>{selectedDestination.distance.toUpperCase()}</Text>
                                                 </View>
-                                                <View style={[styles.stat, dimensions.isDesktop && styles.desktopStat]}>
+                                                <View style={[styles.stat, isDesktop && styles.desktopStat]}>
                                                     <Text style={styles.statLabel}>EST. TRAVEL TIME</Text>
                                                     <Text style={styles.statValue}>{selectedDestination.travel.toUpperCase()}</Text>
                                                 </View>
@@ -163,95 +245,41 @@ export default function DestinationScreen() {
                                         <Text style={styles.placeholder}>Choose a planet to learn more</Text>
                                     )}
                                 </View>
-                            </View>
-                        ) : (
-                            <>
-                                {selectedDestination ? (
-                                    <Image
-                                        source={destinationImages[selectedDestination.name as keyof typeof destinationImages]}
-                                        style={styles.planetImage}
-                                        resizeMode="contain"
-                                    />
-                                ) : (
-                                    <View style={styles.planetPlaceholder} />
-                                )}
-
-                                <View style={styles.tabContainer}>
-                                    {destinations.map((destination) => (
-                                        <Pressable
-                                            key={destination.name}
-                                            style={[
-                                                styles.tab,
-                                                selectedDestination?.name === destination.name && styles.tabActive
-                                            ]}
-                                            onPress={() => selectDestination(destination)}
-                                        >
-                                            <Text style={[
-                                                styles.tabText,
-                                                selectedDestination?.name === destination.name && styles.tabTextActive
-                                            ]}>
-                                                {destination.name.toUpperCase()}
-                                            </Text>
-                                        </Pressable>
-                                    ))}
-                                </View>
-
-                                {selectedDestination ? (
-                                    <View style={styles.infoContainer}>
-                                        <Text style={styles.planetName}>{selectedDestination.name.toUpperCase()}</Text>
-                                        <Text style={styles.planetDescription}>{selectedDestination.description}</Text>
-                                        <View style={styles.divider} />
-                                        <View style={styles.statsContainer}>
-                                            <View style={[styles.stat, dimensions.isDesktop && styles.desktopStat]}>
-                                                <Text style={styles.statLabel}>AVG. DISTANCE</Text>
-                                                <Text style={styles.statValue}>{selectedDestination.distance.toUpperCase()}</Text>
-                                            </View>
-                                            <View style={[styles.stat, dimensions.isDesktop && styles.desktopStat]}>
-                                                <Text style={styles.statLabel}>EST. TRAVEL TIME</Text>
-                                                <Text style={styles.statValue}>{selectedDestination.travel.toUpperCase()}</Text>
-                                            </View>
-                                        </View>
-                                    </View>
-                                ) : (
-                                    <Text style={styles.placeholder}>Choose a planet to learn more</Text>
-                                )}
-                            </>
-                        )}
-                    </ScrollView>
-
-                </ImageBackground>
-            </ScrollView>
-        </Animated.View>
+                            )}
+                        </View>
+                    </Animated.ScrollView>
+                </ScrollView>
+            </ImageBackground>
+        </View>
     );
 }
 
-const createStyles = (dimensions) => StyleSheet.create({
+const styles = StyleSheet.create({
     bg: {
         flex: 1,
         backgroundColor: '#0B0D17',
-        minHeight: dimensions.screenHeight
+        height: Dimensions.get('window').height,
+        width: '100%',
+        resizeMode: 'cover'
     },
     container: {
         flex: 1,
-        paddingTop: dimensions.paddingVertical * 4
+        paddingTop: 100
     },
     content: {
         alignItems: 'center',
-        paddingHorizontal: dimensions.paddingHorizontal,
-        paddingBottom: dimensions.paddingVertical * 2
+        paddingHorizontal: 24,
+        paddingBottom: 32
     },
     desktopContent: {
-        paddingHorizontal: dimensions.desktopPaddingHorizontal,
-        paddingTop: dimensions.desktopPaddingTop,
-        paddingRight: dimensions.screenWidth * 0.08,
+        paddingHorizontal: Dimensions.get('window').width * 0.1,
         alignItems: 'stretch'
     },
     desktopLayout: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
         justifyContent: 'space-between',
         width: '100%',
-        gap: dimensions.largeGap
+        gap: 96
     },
     leftColumn: {
         flex: 1,
@@ -264,52 +292,77 @@ const createStyles = (dimensions) => StyleSheet.create({
     },
     desktopPageTitle: {
         fontFamily: 'BarlowCondensed_400Regular',
-        fontSize: dimensions.titleFontSize * 0.7,
+        fontSize: 28,
         letterSpacing: 4.7,
         color: '#FFFFFF',
         alignSelf: 'flex-start',
-        marginBottom: dimensions.mediumGap
+        paddingVertical: 64,
+        marginBottom: 40,
+        textAlign: 'left'
     },
     desktopPlanetImage: {
-        width: dimensions.imageWidth,
-        height: dimensions.imageMaxHeight * 0.57,
-        marginBottom: 0
+        width: 445,
+        height: 445,
     },
     desktopPlanetName: {
-        fontSize: dimensions.titleFontSize * 2.5,
+        fontSize: 90,
         textAlign: 'left'
     },
     desktopDescription: {
         textAlign: 'left',
-        maxWidth: dimensions.screenWidth * 0.32
+        width: Dimensions.get('window').width * 0.25
     },
     pageTitle: {
         fontFamily: 'BarlowCondensed_400Regular',
-        fontSize: dimensions.bodyFontSize * 0.8,
+        fontSize: 16,
         letterSpacing: 2.7,
         color: '#FFFFFF',
-        marginTop: dimensions.paddingVertical,
-        marginBottom: dimensions.smallGap,
+        paddingVertical: 16,
+        marginBottom: 24,
         textAlign: 'center'
     },
+    contentContainer: {
+        alignItems: 'center',
+        flex: 1
+    },
+    desktopContentContainer: {
+        alignItems: 'flex-start',
+        width: '100%'
+    },
+    tabletStatsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 48
+    },
     pageNumber: {
-        fontWeight: 'bold',
-        opacity: 0.5
+        fontWeight: '700',
+        opacity: 0.5,
+        color: '#FFFFFF'
     },
     planetImage: {
-        width: dimensions.mobileImageWidth * 0.4,
-        height: dimensions.mobileImageWidth * 0.4,
-        marginBottom: dimensions.smallGap * 0.65
+        width: 170,
+        height: 170,
+        marginBottom: 24 * 0.65
     },
     planetPlaceholder: {
-        width: dimensions.mobileImageWidth * 0.4,
-        height: dimensions.mobileImageWidth * 0.4,
-        marginBottom: dimensions.smallGap * 0.65
+        width: 170,
+        height: 170,
+        marginBottom: 24 * 0.65
     },
     tabContainer: {
         flexDirection: 'row',
-        marginBottom: dimensions.smallGap * 0.5,
-        gap: dimensions.smallGap * 0.65
+        justifyContent: 'center',
+        marginBottom: 24 * 0.5,
+        gap: 24 * 0.65
+    },
+    desktopTabContainer: {
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
+        alignSelf: 'flex-start',
+        width: '100%'
+    },
+    desktopTab: {
+        marginHorizontal: 8,
     },
     tab: {
         paddingVertical: 8,
@@ -321,7 +374,7 @@ const createStyles = (dimensions) => StyleSheet.create({
     },
     tabText: {
         fontFamily: 'BarlowCondensed_400Regular',
-        fontSize: dimensions.bodyFontSize * 0.55,
+        fontSize: 15,
         letterSpacing: 2.36,
         color: '#D0D6F9'
     },
@@ -330,38 +383,42 @@ const createStyles = (dimensions) => StyleSheet.create({
     },
     infoContainer: {
         alignItems: 'center',
-        maxWidth: dimensions.containerMaxWidth * 0.8
+        maxWidth: 327
+    },
+    desktopInfoContainer: {
+        alignItems: 'flex-start',
+        marginHorizontal: 8
     },
     planetName: {
         fontFamily: 'Bellefair_400Regular',
-        fontSize: dimensions.titleFontSize * 1.4,
+        fontSize: 56,
         color: '#FFFFFF',
         marginBottom: 16,
         textAlign: 'center'
     },
     planetDescription: {
         fontFamily: 'Barlow_400Regular',
-        fontSize: dimensions.bodyFontSize * 0.55,
+        fontSize: 15,
         lineHeight: 25,
         color: '#D0D6F9',
         textAlign: 'center',
-        marginBottom: dimensions.smallGap * 0.8
+        marginBottom: 24 * 0.8
     },
     divider: {
         width: '100%',
         height: 1,
         backgroundColor: 'rgba(255, 255, 255, 0.25)',
-        marginBottom: dimensions.smallGap * 0.8
+        marginBottom: 24 * 0.8
     },
     statsContainer: {
         width: '100%',
         alignItems: 'center',
-        gap: dimensions.smallGap * 0.8
+        gap: 24 * 0.8
     },
     desktopStatsContainer: {
         width: '100%',
         alignItems: 'center',
-        gap: dimensions.smallGap * 0.8,
+        gap: 24 * 0.8,
         flexDirection: 'row',
         justifyContent: 'flex-start'
     },
@@ -374,21 +431,30 @@ const createStyles = (dimensions) => StyleSheet.create({
     },
     statLabel: {
         fontFamily: 'BarlowCondensed_400Regular',
-        fontSize: dimensions.bodyFontSize * 0.55,
+        fontSize: 15,
         letterSpacing: 2.36,
         color: '#D0D6F9',
         marginBottom: 12
     },
     statValue: {
         fontFamily: 'Bellefair_400Regular',
-        fontSize: dimensions.titleFontSize * 0.7,
+        fontSize: 28,
         color: '#FFFFFF'
     },
     placeholder: {
         fontFamily: 'Barlow_400Regular',
-        fontSize: dimensions.bodyFontSize * 0.6,
+        fontSize: 16,
         color: '#D0D6F9',
         textAlign: 'center',
-        marginTop: dimensions.smallGap
+        marginTop: 24
     },
+    pageContentWrapper: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    desktopPageContentWrapper: {
+        alignItems: 'stretch',
+        justifyContent: 'space-between'
+    }
 });
